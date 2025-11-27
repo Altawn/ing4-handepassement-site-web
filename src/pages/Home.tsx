@@ -1,8 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { Calendar, Users, BookOpen, Heart, CheckCircle, Eye } from 'lucide-react';
-import heroImage from '../assets/images/image_accueil.jpeg';
-
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, Users, BookOpen, Heart, CheckCircle, Eye } from 'lucide-react';
 import heroImage from '../assets/images/image_accueil.jpeg';
 
