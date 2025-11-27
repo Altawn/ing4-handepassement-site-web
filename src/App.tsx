@@ -3,10 +3,12 @@ import Home from './pages/Home'
 import FirstRdv from './pages/FirstRdv'
 import Connexion from './pages/Connexion'
 import Inscription from './pages/Inscription'
+import Header from './components/Header'
 
 function App() {
     return (
         <Router>
+            <Header />
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/premier-rdv" element={<FirstRdv />} />
