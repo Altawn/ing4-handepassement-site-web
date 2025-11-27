@@ -1,22 +1,11 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Users, BookOpen, Heart, CheckCircle, Eye } from 'lucide-react';
+import { Calendar, Users, BookOpen, Heart, CheckCircle } from 'lucide-react';
 import heroImage from '../assets/images/image-accueil.png';
 import HeaderMain from '../components/HeaderMain'
 import FooterOther from '../components/FooterOther'
+import Oeil from '../components/Oeil'
 
 function Home() {
-    const [showEye, setShowEye] = useState(true);
-
-    // Ensure eye button is always visible
-    useEffect(() => {
-        const handleScroll = () => {
-            setShowEye(true);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
     const services = [
         {
             icon: <Calendar className="w-6 h-6 text-brand" />,
@@ -50,9 +39,9 @@ function Home() {
         <>
             <div className="min-h-screen bg-accent-50 font-sans relative">
                 {/* Hero Section */}
-                <section className="bg-brand text-white pb-24 px-6 relative overflow-hidden rounded-b-[3rem]">
+                <section className="bg-brand text-white pb-6 px-6 relative overflow-hidden rounded-b-[3rem]">
                     <HeaderMain />
-                    <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center pb-12">
+                    <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center pb-6">
                         <div className="space-y-8 z-10">
                             <h1 className="text-4xl md:text-5xl font-bold leading-tight text-accent">
                                 Des Études Supérieures Sans Obstacles. On Handiscute ?
@@ -71,9 +60,11 @@ function Home() {
                             />
                         </div>
                     </div>
+                </section>
 
-                    {/* Text below hero, centered, overlapping slightly or just below */}
-                    <div className="container mx-auto mt-16 text-center max-w-4xl">
+                {/* Description Section */}
+                <section className="py-12 px-6">
+                    <div className="container mx-auto text-center max-w-4xl">
                         <p className="text-brand text-xl leading-relaxed font-medium">
                             Accompagner les jeunes porteurs de handicap à partir du lycée et leur famille pour mieux les insérer dans l'enseignement supérieur et leur permettre la réussite de leurs études à travers de la sensibilisation et de la mise à disposition d'outils numériques
                         </p>
@@ -150,12 +141,8 @@ function Home() {
                     </div>
                 </section>
 
-                {/* Fixed Eye Button */}
-                {showEye && (
-                    <button className="fixed bottom-8 right-8 w-14 h-14 bg-brand rounded-full flex items-center justify-center shadow-2xl hover:bg-brand-600 transition-colors z-50 border-2 border-white">
-                        <Eye className="w-6 h-6 text-white" />
-                    </button>
-                )}
+                {/* Accessibility Button */}
+                <Oeil />
             </div>
             <FooterOther />
         </>

@@ -24,13 +24,13 @@ const HeaderMain: React.FC = () => {
                     <Link to="/" className="text-white hover:text-accent transition-colors font-medium text-xl">
                         Êtes-vous concerné ?
                     </Link>
-                    <Link to="/" className="text-white hover:text-accent transition-colors font-medium text-xl">
+                    <Link to="/connexion" className="text-white hover:text-accent transition-colors font-medium text-xl">
                         Connexion
                     </Link>
 
-                    <button className="px-10 py-4 bg-accent text-brand text-xl font-bold rounded-full hover:bg-accent-400 transition-colors shadow-sm">
+                    <Link to="/inscription" className="px-10 py-4 bg-accent text-brand text-xl font-bold rounded-full hover:bg-accent-400 transition-colors shadow-sm inline-block">
                         Inscription
-                    </button>
+                    </Link>
                 </nav>
             </div>
         </header>

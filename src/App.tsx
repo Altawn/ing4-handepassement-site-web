@@ -4,6 +4,7 @@ import FirstRdv from './pages/FirstRdv'
 import FirstRdvStep2 from './pages/FirstRdvStep2'
 import Connexion from './pages/Connexion'
 import Inscription from './pages/Inscription'
+import EspaceEtudiant from './pages/EspaceEtudiant'
 
 function App() {
     return (
@@ -14,6 +15,7 @@ function App() {
                 <Route path="/premier-rdv/selection" element={<FirstRdvStep2 />} />
                 <Route path="/connexion" element={<Connexion />} />
                 <Route path="/inscription" element={<Inscription />} />
+                <Route path="/espace-etudiant" element={<EspaceEtudiant />} />
             </Routes>
         </Router>
     )
