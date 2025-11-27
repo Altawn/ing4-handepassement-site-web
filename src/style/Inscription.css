@@ -1,0 +1,95 @@
+.page-container-background {
+    background-image: url('../assets/images/bg_inscription.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Overlay to darken/blur the background slightly if needed, or just rely on the card opacity */
+.page-container-background::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    /* Dark overlay */
+    backdrop-filter: blur(4px);
+    /* Blur effect */
+    z-index: 1;
+}
+
+.white-card {
+    background: white;
+    border-radius: theme('borderRadius.lg');
+    padding: 2rem;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: theme('boxShadow.card');
+    position: relative;
+    z-index: 10;
+    margin: 0.5rem;
+}
+
+/* Stepper Styles */
+.stepper-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 10;
+}
+
+.step-circle {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    /* Semi-transparent white */
+    color: white;
+    /* White text */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(4px);
+}
+
+.step-circle.active {
+    background-color: theme('colors.brand.DEFAULT');
+    color: white;
+    border-color: theme('colors.brand.DEFAULT');
+    box-shadow: 0 0 15px rgba(26, 77, 116, 0.5);
+    /* Glow effect */
+}
+
+.step-circle.completed {
+    background-color: theme('colors.green.500');
+    color: white;
+    border-color: theme('colors.green.500');
+}
+
+.line {
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.3);
+    /* Semi-transparent white line */
+    flex-grow: 1;
+    max-width: 100px;
+    margin: 0 1rem;
+}
+
+.line.active {
+    background-color: theme('colors.brand.DEFAULT');
+}
