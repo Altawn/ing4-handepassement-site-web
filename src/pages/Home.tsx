@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Calendar, Users, BookOpen, Heart, CheckCircle, Eye } from 'lucide-react';
 import heroImage from '../assets/images/image-accueil.png';
 import HeaderMain from '../components/HeaderMain'
@@ -47,18 +48,18 @@ function Home() {
 
     return (
         <>
-            <HeaderMain />
             <div className="min-h-screen bg-accent-50 font-sans relative">
                 {/* Hero Section */}
-                <section className="bg-brand text-white pt-12 pb-24 px-6 relative overflow-hidden rounded-b-[3rem]">
-                    <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center">
+                <section className="bg-brand text-white pb-24 px-6 relative overflow-hidden rounded-b-[3rem]">
+                    <HeaderMain />
+                    <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center pb-12">
                         <div className="space-y-8 z-10">
                             <h1 className="text-4xl md:text-5xl font-bold leading-tight text-accent">
                                 Des Études Supérieures Sans Obstacles. On Handiscute ?
                             </h1>
-                            <button className="px-8 py-3 bg-accent text-brand font-bold rounded-lg hover:bg-accent-400 transition-colors shadow-lg">
+                            <Link to="/premier-rdv" className="inline-block px-8 py-3 bg-accent text-brand font-bold rounded-lg hover:bg-accent-400 transition-colors shadow-lg">
                                 Prendre un premier rendez-vous
-                            </button>
+                            </Link>
                         </div>
                         <div className="relative z-10 flex justify-center md:justify-end">
                             {/* Image container with specific styling to match design */}
@@ -141,9 +142,9 @@ function Home() {
                                 <p className="text-brand-100 mb-8 max-w-2xl mx-auto">
                                     Commencez dès aujourd'hui et bénéficiez d'un accompagnement sur mesure pour votre réussite
                                 </p>
-                                <button className="px-8 py-3 bg-accent text-brand font-bold rounded-full hover:bg-accent-400 transition-colors shadow-lg">
+                                <Link to="/premier-rdv" className="inline-block px-8 py-3 bg-accent text-brand font-bold rounded-full hover:bg-accent-400 transition-colors shadow-lg">
                                     Prendre rendez-vous maintenant
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     </div>
