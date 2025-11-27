@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import '../style/Inscription.css';
 import { Check, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import HeaderInscription from '../components/HeaderInscription';
 
 export default function Inscription() {
     const [step, setStep] = useState(1);
@@ -35,6 +36,7 @@ export default function Inscription() {
 
     return (
         <div className="page-container-background font-sans">
+            <HeaderInscription />
             <div className="flex flex-col items-center w-full max-w-[600px]">
 
                 {/* Stepper - Moved outside card */}
