@@ -7,7 +7,7 @@ const HeaderClient: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
     return (
-        <header className="w-[95%] lg:w-[98%] bg-brand rounded-[2rem] lg:rounded-full px-4 lg:px-6 md:mt-4 mb-6 mx-auto lg:mx-4 sticky top-2 z-50">
+        <header className="w-[95%] lg:w-[98%] bg-brand rounded-[2rem] lg:rounded-full px-4 lg:px-6 md:mt-4 mb-6 mx-auto lg:mx-4 relative z-50">
             <div className="container mx-auto flex flex-col lg:flex-row items-center justify-between py-4 lg:py-0 gap-4 lg:gap-0">
                 <div className="w-full lg:w-auto flex items-center justify-between">
                     {/* Logo Section */}

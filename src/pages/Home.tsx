@@ -39,7 +39,7 @@ function Home() {
         <>
             <div className="min-h-screen bg-accent-50 font-sans relative">
                 {/* Hero Section */}
-                <section className="bg-brand text-white pb-6 px-6 relative overflow-hidden rounded-b-[3rem]">
+                <section className="bg-brand text-white pb-6 px-6 pt-1 relative overflow-hidden rounded-b-[3rem]">
                     <HeaderMain />
                     <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center pb-6">
                         <div className="space-y-8 z-10">
