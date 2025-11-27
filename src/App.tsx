@@ -4,6 +4,7 @@ import FirstRdv from './pages/FirstRdv'
 import Connexion from './pages/Connexion'
 import Inscription from './pages/Inscription'
 import HeaderMain from './components/HeaderMain'
+import FooterMain from './components/FooterMain'
 
 function App() {
     return (
@@ -15,6 +16,7 @@ function App() {
                 <Route path="/connexion" element={<Connexion />} />
                 <Route path="/inscription" element={<Inscription />} />
             </Routes>
+            <FooterMain />
         </Router>
     )
 }

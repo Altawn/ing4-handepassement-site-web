@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logo from '../assets/images/nouvo-logo-handepassement.png';
+import logo from '../assets/images/logo-handepassement.png';
 
 const HeaderAdmin: React.FC = () => {
     return (
