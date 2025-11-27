@@ -47,7 +47,8 @@ export default {
                 sans: ["Nunito", "sans-serif"]
             },
             borderRadius: {
-                lg: "0.75rem"
+                lg: "0.75rem",
+                big: "4rem",
             },
             boxShadow: {
                 card: "0 8px 24px rgba(26,77,116,0.08)"
