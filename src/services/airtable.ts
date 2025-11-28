@@ -100,3 +100,40 @@ export const createStudent = async (data: StudentData) => {
         throw error;
     }
 };
+
+export const verifyStudent = async (email: string, password: string) => {
+    if (!apiKey || !baseId) {
+        throw new Error("Configuration Airtable manquante");
+    }
+
+    try {
+        // Search for user with matching email
+        const records = await base(TABLES.ETUDIANT).select({
+            filterByFormula: `{Adresse mail} = '${email}'`,
+            maxRecords: 1
+        }).firstPage();
+
+        if (records.length === 0) {
+            return { success: false, message: "Email non trouvé" };
+        }
+
+        const student = records[0];
+        const storedPassword = student.get('Mot de passe');
+
+        if (storedPassword === password) {
+            return {
+                success: true,
+                student: {
+                    id: student.id,
+                    ...student.fields
+                }
+            };
+        } else {
+            return { success: false, message: "Mot de passe incorrect" };
+        }
+
+    } catch (error: any) {
+        console.error("Erreur lors de la connexion:", error);
+        throw new Error("Erreur de connexion au serveur");
+    }
+};

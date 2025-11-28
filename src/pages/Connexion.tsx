@@ -3,18 +3,35 @@ import { Link, useNavigate } from 'react-router-dom';
 import HeaderMain from '../components/HeaderMain';
 import FooterOther from '../components/FooterOther';
 import Oeil from '../components/Oeil';
+import { verifyStudent } from '../services/airtable';
 
 function Connexion() {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle login logic here
-        console.log('Login attempt:', { email, password });
-        // Redirect to student dashboard
-        navigate('/espace-etudiant');
+        setError(null);
+        setIsLoading(true);
+
+        try {
+            const result = await verifyStudent(email, password);
+
+            if (result.success) {
+                // Store user info if needed (e.g., in context or local storage)
+                console.log('Login successful:', result.student);
+                navigate('/espace-etudiant');
+            } else {
+                setError(result.message || "Erreur lors de la connexion");
+            }
+        } catch (err) {
+            setError("Une erreur est survenue. Veuillez réessayer.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -30,6 +47,11 @@ function Connexion() {
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {error && (
+                            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm font-medium">
+                                {error}
+                            </div>
+                        )}
                         {/* Email Input */}
                         <div>
                             <label htmlFor="email" className="block text-sm font-semibold text-gray-900 mb-2">
@@ -72,9 +94,10 @@ function Connexion() {
                         {/* Submit Button */}
                         <button
                             type="submit"
-                            className="w-full py-3 bg-brand text-white font-bold rounded-lg hover:bg-brand-600 transition-colors shadow-md"
+                            disabled={isLoading}
+                            className={`w-full py-3 bg-brand text-white font-bold rounded-lg hover:bg-brand-600 transition-colors shadow-md ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            Se connecter
+                            {isLoading ? 'Connexion...' : 'Se connecter'}
                         </button>
                     </form>
 
