@@ -23,7 +23,7 @@ function Connexion() {
             if (result.success) {
                 // Store user info if needed (e.g., in context or local storage)
                 console.log('Login successful:', result.student);
-                navigate('/espace-etudiant');
+                navigate('/mon-espace');
             } else {
                 setError(result.message || "Erreur lors de la connexion");
             }
