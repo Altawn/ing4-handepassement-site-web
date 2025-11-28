@@ -137,3 +137,20 @@ export const verifyStudent = async (email: string, password: string) => {
         throw new Error("Erreur de connexion au serveur");
     }
 };
+
+export const getStudentCount = async () => {
+    if (!apiKey || !baseId) {
+        throw new Error("Configuration Airtable manquante");
+    }
+
+    try {
+        const records = await base(TABLES.ETUDIANT).select({
+            filterByFormula: "{Statut} = 'Étudiant'",
+        }).all();
+
+        return records.length;
+    } catch (error: any) {
+        console.error("Erreur lors de la récupération du nombre d'étudiants:", error);
+        return 0; // Return 0 on error to avoid breaking UI
+    }
+};

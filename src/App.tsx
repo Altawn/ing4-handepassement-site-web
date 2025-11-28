@@ -5,6 +5,7 @@ import FirstRdvStep2 from './pages/FirstRdvStep2'
 import Connexion from './pages/Connexion'
 import Inscription from './pages/Inscription'
 import EspaceEtudiant from './pages/EspaceEtudiant'
+import AdminHome from './pages/AdminHome'
 
 function App() {
     return (
