@@ -23,19 +23,14 @@ function Connexion() {
             if (result.success) {
                 // Store user info if needed (e.g., in context or local storage)
                 console.log('Login successful:', result.student);
-<<<<<<< HEAD
-                navigate('/mon-espace');
-=======
-
                 // Check status for redirection
                 const studentData = result.student as any;
                 const status = studentData['Statut'];
                 if (status === 'Admin' || status === 'Administrateur') {
                     navigate('/admin');
                 } else {
-                    navigate('/espace-etudiant');
+                    navigate('/mon-espace');
                 }
->>>>>>> 8a4fb6e9d6c8430edb0359ea19888a2fbc694bbd
             } else {
                 setError(result.message || "Erreur lors de la connexion");
             }
