@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import '../style/Inscription.css';
-import { Check, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import HeaderInscription from '../components/HeaderInscription';
+import { createStudent } from '../services/airtable';
+import { Link } from 'react-router-dom';
 
 export default function Inscription() {
     const [step, setStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         prenom: '',
         nom: '',
@@ -16,7 +20,7 @@ export default function Inscription() {
         university: '',
         fieldOfStudy: '',
         studyLevel: '',
-        disabilityType: '',
+        disabilityTypes: [] as string[], // Changed to array
         needsDescription: '',
         acceptTerms: false
     });
@@ -33,6 +37,41 @@ export default function Inscription() {
         const { name, checked } = e.target;
         setFormData(prev => ({ ...prev, [name]: checked }));
     };
+
+    const handleDisabilityChange = (value: string) => {
+        setFormData(prev => {
+            const current = prev.disabilityTypes;
+            if (current.includes(value)) {
+                return { ...prev, disabilityTypes: current.filter(item => item !== value) };
+            } else {
+                return { ...prev, disabilityTypes: [...current, value] };
+            }
+        });
+    };
+
+    const handleSubmit = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            await createStudent(formData);
+            nextStep(); // Go to success step
+        } catch (err) {
+            console.error(err);
+            setError("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const disabilityOptions = [
+        "TDAH",
+        "Autisme",
+        "Dyslexie",
+        "Dyscaculie",
+        "Dysgraphie",
+        "Phobie social",
+        "Autre"
+    ];
 
     return (
         <div className="page-container-background font-sans">
@@ -192,12 +231,12 @@ export default function Inscription() {
                                     onChange={handleChange}
                                 >
                                     <option value="">Sélectionnez votre niveau</option>
-                                    <option value="l1">Licence 1</option>
-                                    <option value="l2">Licence 2</option>
-                                    <option value="l3">Licence 3</option>
-                                    <option value="m1">Master 1</option>
-                                    <option value="m2">Master 2</option>
-                                    <option value="doctorat">Doctorat</option>
+                                    <option value="1ère année">Licence 1</option>
+                                    <option value="2ème année">Licence 2</option>
+                                    <option value="3ème année">Licence 3</option>
+                                    <option value="4ème année">Master 1</option>
+                                    <option value="5ème année">Master 2</option>
+                                    <option value="autre">Autre</option>
                                 </select>
                             </div>
 
@@ -218,23 +257,27 @@ export default function Inscription() {
                             <h2 className="text-xl font-bold text-neutral-800 mb-1">Besoins spécifiques</h2>
                             <p className="text-sm text-neutral-500 mb-4">Étape 3 sur 3</p>
 
+                            {error && (
+                                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                                    {error}
+                                </div>
+                            )}
+
                             <div className="mb-3">
-                                <label className="block text-xs font-medium text-neutral-700 mb-1">Type de handicap ou trouble</label>
-                                <select
-                                    name="disabilityType"
-                                    className="w-full px-3 py-1.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition bg-white text-sm"
-                                    value={formData.disabilityType}
-                                    onChange={handleChange}
-                                >
-                                    <option value="">Sélectionnez si applicable</option>
-                                    <option value="moteur">Handicap moteur</option>
-                                    <option value="visuel">Handicap visuel</option>
-                                    <option value="auditif">Handicap auditif</option>
-                                    <option value="psychique">Trouble psychique</option>
-                                    <option value="cognitif">Trouble cognitif / DYS</option>
-                                    <option value="maladie">Maladie invalidante</option>
-                                    <option value="autre">Autre</option>
-                                </select>
+                                <label className="block text-xs font-medium text-neutral-700 mb-2">Type de handicap ou trouble (plusieurs choix possibles)</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {disabilityOptions.map((option) => (
+                                        <label key={option} className={`flex items-center p-2 border rounded-lg cursor-pointer transition text-sm ${formData.disabilityTypes.includes(option) ? 'border-brand bg-brand-50 text-brand-900' : 'border-neutral-200 hover:border-brand-200'}`}>
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 text-brand border-neutral-300 rounded focus:ring-brand-400 mr-2"
+                                                checked={formData.disabilityTypes.includes(option)}
+                                                onChange={() => handleDisabilityChange(option)}
+                                            />
+                                            {option}
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="mb-4">
@@ -264,15 +307,23 @@ export default function Inscription() {
                             </div>
 
                             <div className="flex justify-between">
-                                <button className="flex items-center gap-2 text-neutral-600 hover:text-neutral-900 px-4 py-2 transition text-sm" onClick={prevStep}>
+                                <button
+                                    className="flex items-center gap-2 text-neutral-600 hover:text-neutral-900 px-4 py-2 transition text-sm"
+                                    onClick={prevStep}
+                                    disabled={isLoading}
+                                >
                                     <ChevronLeft size={18} /> Précédent
                                 </button>
                                 <button
-                                    className={`flex items-center gap-2 bg-brand text-white px-5 py-2 rounded-lg hover:bg-brand-400 transition text-sm ${!formData.acceptTerms ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    onClick={nextStep}
-                                    disabled={!formData.acceptTerms}
+                                    className={`flex items-center gap-2 bg-brand text-white px-5 py-2 rounded-lg hover:bg-brand-400 transition text-sm ${(!formData.acceptTerms || isLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    onClick={handleSubmit}
+                                    disabled={!formData.acceptTerms || isLoading}
                                 >
-                                    Terminer l'inscription <Check size={18} />
+                                    {isLoading ? (
+                                        <>Inscription en cours <Loader2 size={18} className="animate-spin" /></>
+                                    ) : (
+                                        <>Terminer l'inscription <Check size={18} /></>
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -288,9 +339,9 @@ export default function Inscription() {
                             <p className="text-neutral-600 mb-6 max-w-md mx-auto text-sm">
                                 Votre compte a été créé avec succès. Vous pouvez maintenant accéder à votre tableau de bord.
                             </p>
-                            <button className="bg-brand text-white px-6 py-2.5 rounded-lg hover:bg-brand-400 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-sm">
+                            <Link to="/mon-espace" className="bg-brand text-white px-6 py-2.5 rounded-lg hover:bg-brand-400 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-sm">
                                 Accéder au tableau de bord
-                            </button>
+                            </Link>
                         </div>
                     )}
 

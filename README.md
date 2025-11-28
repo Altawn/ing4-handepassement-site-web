@@ -1,93 +1,65 @@
-# handepassement-site-web
+# Handepassement
 
+Bienvenue sur le dépôt du projet **Handepassement**.
 
+## 📝 Description
 
-## Getting started
+**Handepassement** est une plateforme web dédiée à l'accompagnement des étudiants en situation de handicap dans l'enseignement supérieur. Notre mission est de faciliter leur insertion et leur réussite académique à travers :
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+-   📅 **Prise de rendez-vous** pour un suivi personnalisé.
+-   🤝 **Accompagnement sur mesure** adapté aux besoins spécifiques (Dyslexie, TDAH, Autisme, etc.).
+-   📚 **Documentation** et ressources sur les aménagements disponibles.
+-   🛠️ **Outils de compensation** numériques pour aider au quotidien.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+L'objectif est de garantir des études supérieures sans obstacles : *"On Handiscute ?"*
 
-## Add your files
+## 🚀 Technologies utilisées
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+Ce projet est construit avec des technologies web modernes pour assurer performance et accessibilité :
 
-```
-cd existing_repo
-git remote add origin https://gitlab.com/Altawn/handepassement-site-web.git
-git branch -M main
-git push -uf origin main
-```
+-   **Framework** : [React](https://react.dev/) (via [Vite](https://vitejs.dev/))
+-   **Langage** : [TypeScript](https://www.typescriptlang.org/)
+-   **Styles** : [Tailwind CSS](https://tailwindcss.com/)
+-   **Routing** : [React Router](https://reactrouter.com/)
+-   **Base de données / Backend** : [Airtable](https://airtable.com/)
+-   **Icônes** : [Lucide React](https://lucide.dev/)
 
-## Integrate with your tools
+## 🛠️ Installation et Démarrage
 
-- [ ] [Set up project integrations](https://gitlab.com/Altawn/handepassement-site-web/-/settings/integrations)
+Pour lancer le projet localement sur votre machine :
 
-## Collaborate with your team
+1.  **Cloner le dépôt** :
+    ```bash
+    git clone https://gitlab.com/Altawn/handepassement-site-web.git
+    cd handepassement-site-web
+    ```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+2.  **Installer les dépendances** :
+    ```bash
+    yarn install
+    ```
 
-## Test and Deploy
+3.  **Configurer les variables d'environnement** :
+    Créez un fichier `.env` à la racine du projet et ajoutez vos clés API Airtable (voir `.env.example` si disponible ou demandez à l'administrateur).
+    ```env
+    VITE_AIRTABLE_API_KEY=votre_cle_api
+    VITE_AIRTABLE_BASE_ID=votre_id_base
+    ```
 
-Use the built-in continuous integration in GitLab.
+4.  **Lancer le serveur de développement** :
+    ```bash
+    yarn run dev
+    ```
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+5.  **Accéder à l'application** :
+    Ouvrez votre navigateur à l'adresse indiquée (généralement `http://localhost:5173`).
 
-***
+## ✅ To-Do List
 
-# Editing this README
+Cette section liste les tâches restantes et les améliorations à apporter au projet.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+- [ ] **Inscription**
+    - [ ] Rendre les champs obligatoires.
 
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+---
+*Projet réalisé dans le cadre de l'ING4.*
