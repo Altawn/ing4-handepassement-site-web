@@ -17,6 +17,7 @@ function App() {
                 <Route path="/connexion" element={<Connexion />} />
                 <Route path="/inscription" element={<Inscription />} />
                 <Route path="/mon-espace" element={<EspaceEtudiant />} />
+                <Route path="/admin" element={<AdminHome />} />
             </Routes>
         </Router>
     )
