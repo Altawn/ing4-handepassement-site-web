@@ -5,6 +5,7 @@ import FirstRdvStep2 from './pages/FirstRdvStep2'
 import Connexion from './pages/Connexion'
 import Inscription from './pages/Inscription'
 import EspaceEtudiant from './pages/EspaceEtudiant'
+import AdminHome from './pages/AdminHome'
 
 function App() {
     return (
@@ -16,6 +17,7 @@ function App() {
                 <Route path="/connexion" element={<Connexion />} />
                 <Route path="/inscription" element={<Inscription />} />
                 <Route path="/espace-etudiant" element={<EspaceEtudiant />} />
+                <Route path="/admin" element={<AdminHome />} />
             </Routes>
         </Router>
     )
