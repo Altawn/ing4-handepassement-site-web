@@ -345,7 +345,7 @@ export default function Inscription() {
                     )}
 
                     <div className="text-center mt-6 text-sm text-neutral-500">
-                        Déjà inscrit ? <a href="#" className="text-brand font-semibold hover:underline">Se connecter</a>
+                        Déjà inscrit ? <a href="/mon-espace" className="text-brand font-semibold hover:underline">Se connecter</a>
                     </div>
 
                 </div>

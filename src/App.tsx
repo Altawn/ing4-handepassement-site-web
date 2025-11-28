@@ -16,8 +16,7 @@ function App() {
                 <Route path="/premier-rdv/selection" element={<FirstRdvStep2 />} />
                 <Route path="/connexion" element={<Connexion />} />
                 <Route path="/inscription" element={<Inscription />} />
-                <Route path="/espace-etudiant" element={<EspaceEtudiant />} />
-                <Route path="/admin" element={<AdminHome />} />
+                <Route path="/mon-espace" element={<EspaceEtudiant />} />
             </Routes>
         </Router>
     )
