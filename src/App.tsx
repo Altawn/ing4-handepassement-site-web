@@ -6,6 +6,7 @@ import Connexion from './pages/Connexion'
 import Inscription from './pages/Inscription'
 import EspaceEtudiant from './pages/EspaceEtudiant'
 import AdminHome from './pages/AdminHome'
+import StudentManagement from './pages/StudentManagement'
 
 function App() {
     return (
@@ -18,6 +19,7 @@ function App() {
                 <Route path="/inscription" element={<Inscription />} />
                 <Route path="/mon-espace" element={<EspaceEtudiant />} />
                 <Route path="/admin" element={<AdminHome />} />
+                <Route path="/admin/gestion-etudiants" element={<StudentManagement />} />
             </Routes>
         </Router>
     )

@@ -154,3 +154,47 @@ export const getStudentCount = async () => {
         return 0; // Return 0 on error to avoid breaking UI
     }
 };
+
+export const getAllStudents = async () => {
+    if (!apiKey || !baseId) {
+        throw new Error("Configuration Airtable manquante");
+    }
+
+    try {
+        const records = await base(TABLES.ETUDIANT).select({
+            filterByFormula: "{Statut} = 'Étudiant'",
+            sort: [{ field: "Nom Complet", direction: "asc" }]
+        }).all();
+
+        // On résout TOUTES les Promises
+        const students = await Promise.all(
+            records.map(async record => {
+                const handicapIds = (record.get('Handicaps') as string[]) || [];
+
+                // Récupération des noms réels des handicaps
+                const handicaps = await Promise.all(
+                    handicapIds.map(async id => {
+                        const r = await base('Handicaps').find(id);
+                        return r.get('Nom du Handicap') as string;
+                    })
+                );
+
+                return {
+                    id: record.id,
+                    nomComplet: record.get('Nom Complet') as string,
+                    email: record.get('Adresse mail') as string,
+                    phone: record.get('Telephone') as string,
+                    handicaps,
+                    inscription: "",
+                    dernierRdv: ""
+                };
+            })
+        );
+
+        return students; // <-- ici c’est bien Student[]
+    } catch (error) {
+        console.error("Erreur lors de la récupération des étudiants:", error);
+        return [];
+    }
+};
+
