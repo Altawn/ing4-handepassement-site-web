@@ -7,6 +7,8 @@ import Inscription from './pages/Inscription'
 import EspaceEtudiant from './pages/EspaceEtudiant'
 import AdminHome from './pages/AdminHome'
 import StudentManagement from './pages/StudentManagement'
+import PriseRDVClient from './pages/PriseRDVClient'
+import Documentation from './pages/Documentation'
 
 function App() {
     return (
@@ -20,6 +22,8 @@ function App() {
                 <Route path="/mon-espace" element={<EspaceEtudiant />} />
                 <Route path="/admin" element={<AdminHome />} />
                 <Route path="/admin/gestion-etudiants" element={<StudentManagement />} />
+                <Route path="/prise-rdv" element={<PriseRDVClient />} />
+                <Route path="/documentation" element={<Documentation />} />
             </Routes>
         </Router>
     )

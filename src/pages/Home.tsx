@@ -96,7 +96,7 @@ function Home() {
                 </section>
 
                 {/* Concerns Section */}
-                <section className="py-8 px-6 pb-24">
+                <section id="concerns-section" className="py-8 px-6 pb-24">
                     <div className="container mx-auto">
                         <div className="bg-white rounded-[3rem] p-12 shadow-xl border border-gray-100">
                             <div className="text-center mb-12">

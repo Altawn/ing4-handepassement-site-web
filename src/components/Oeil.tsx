@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, X, Type, AlignJustify, Palette, Sun } from 'lucide-react';
 
 interface AccessibilitySettings {
@@ -10,11 +10,23 @@ interface AccessibilitySettings {
 
 const Oeil = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [settings, setSettings] = useState<AccessibilitySettings>({
-        fontSize: 16,
-        letterSpacing: 0,
-        colorBlindMode: 'normal',
-        contrast: 'normal'
+
+    // Load settings from localStorage on mount
+    const [settings, setSettings] = useState<AccessibilitySettings>(() => {
+        const savedSettings = localStorage.getItem('accessibilitySettings');
+        if (savedSettings) {
+            try {
+                return JSON.parse(savedSettings);
+            } catch (e) {
+                console.error('Failed to parse accessibility settings:', e);
+            }
+        }
+        return {
+            fontSize: 16,
+            letterSpacing: 0,
+            colorBlindMode: 'normal',
+            contrast: 'normal'
+        };
     });
 
     const applySettings = () => {
@@ -53,6 +65,9 @@ const Oeil = () => {
         root.style.removeProperty('--base-font-size');
         root.style.removeProperty('--letter-spacing');
         root.classList.remove('colorblind-protan', 'colorblind-deutan', 'colorblind-tritan', 'high-contrast');
+
+        // Clear from localStorage
+        localStorage.removeItem('accessibilitySettings');
     };
 
     const handleFontSizeChange = (value: number) => {
@@ -71,17 +86,22 @@ const Oeil = () => {
         setSettings({ ...settings, contrast: contrast });
     };
 
+    // Save settings to localStorage whenever they change
+    useEffect(() => {
+        localStorage.setItem('accessibilitySettings', JSON.stringify(settings));
+    }, [settings]);
+
     // Apply settings whenever they change
-    useState(() => {
+    useEffect(() => {
         applySettings();
-    });
+    }, [settings]);
 
     return (
         <>
             {/* Eye Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="fixed bottom-8 right-8 w-14 h-14 bg-brand rounded-full flex items-center justify-center shadow-2xl hover:bg-brand-600 transition-colors z-50 border-2 border-white"
+                className="accessibility-eye-button fixed bottom-8 right-8 w-14 h-14 bg-brand rounded-full flex items-center justify-center shadow-2xl hover:bg-brand-600 transition-colors z-50 border-2 border-white"
                 aria-label="Paramètres d'accessibilité"
             >
                 <Eye className="w-6 h-6 text-white" />
@@ -199,8 +219,8 @@ const Oeil = () => {
                                         <button
                                             onClick={() => handleColorBlindMode('normal')}
                                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${settings.colorBlindMode === 'normal'
-                                                    ? 'bg-brand text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-brand text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
                                         >
                                             Normal
@@ -208,8 +228,8 @@ const Oeil = () => {
                                         <button
                                             onClick={() => handleColorBlindMode('protan')}
                                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${settings.colorBlindMode === 'protan'
-                                                    ? 'bg-brand text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-brand text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
                                         >
                                             Protanopie (rouge)
@@ -217,8 +237,8 @@ const Oeil = () => {
                                         <button
                                             onClick={() => handleColorBlindMode('deutan')}
                                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${settings.colorBlindMode === 'deutan'
-                                                    ? 'bg-brand text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-brand text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
                                         >
                                             Deutéranopie (vert)
@@ -226,8 +246,8 @@ const Oeil = () => {
                                         <button
                                             onClick={() => handleColorBlindMode('tritan')}
                                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${settings.colorBlindMode === 'tritan'
-                                                    ? 'bg-brand text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-brand text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
                                         >
                                             Tritanopie (bleu)
@@ -250,8 +270,8 @@ const Oeil = () => {
                                         <button
                                             onClick={() => handleContrast('normal')}
                                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${settings.contrast === 'normal'
-                                                    ? 'bg-brand text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-brand text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
                                         >
                                             Contraste normal
@@ -259,8 +279,8 @@ const Oeil = () => {
                                         <button
                                             onClick={() => handleContrast('high')}
                                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${settings.contrast === 'high'
-                                                    ? 'bg-brand text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-brand text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
                                         >
                                             Contraste élevé

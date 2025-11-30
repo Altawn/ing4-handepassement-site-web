@@ -34,9 +34,9 @@ const HeaderMain: React.FC = () => {
                 {/* Navigation Section */}
                 <nav className={`${isMenuOpen ? 'flex' : 'hidden'} absolute top-full right-0 mt-4 w-64 bg-white rounded-2xl shadow-xl p-6 flex-col gap-4 lg:static lg:flex lg:flex-row lg:items-center lg:justify-end lg:gap-6 xl:gap-16 lg:w-auto lg:bg-transparent lg:shadow-none lg:p-0`}>
 
-                    <Link to="/" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
+                    <a href="/#concerns-section" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
                         Êtes-vous concerné ?
-                    </Link>
+                    </a>
                     <Link to="/connexion" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
                         Connexion
                     </Link>

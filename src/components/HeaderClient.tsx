@@ -33,19 +33,19 @@ const HeaderClient: React.FC = () => {
 
                 {/* Navigation Section */}
                 <nav className={`${isMenuOpen ? 'flex' : 'hidden'} absolute top-full right-0 mt-4 w-64 bg-white rounded-2xl shadow-xl p-6 flex-col gap-4 lg:static lg:flex lg:flex-row lg:items-center lg:justify-end lg:gap-6 xl:gap-16 lg:w-auto lg:bg-transparent lg:shadow-none lg:p-0`}>
-                    <Link to="/" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
+                    <Link to="/documentation" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
                         Documentation
                     </Link>
-                    <Link to="/" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
+                    <Link to="/mon-espace" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
                         Mon Espace
                     </Link>
-                    <Link to="/" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
+                    <Link to="/prise-rdv" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
                         RDV
                     </Link>
 
-                    <button className="px-8 py-3 lg:px-6 lg:py-3 xl:px-10 xl:py-4 bg-accent text-brand text-lg lg:text-base xl:text-xl font-bold rounded-full hover:bg-accent-400 transition-colors shadow-sm w-full lg:w-auto">
+                    <Link to="/" className="px-8 py-3 lg:px-6 lg:py-3 xl:px-10 xl:py-4 bg-accent text-brand text-lg lg:text-base xl:text-xl font-bold rounded-full hover:bg-accent-400 transition-colors shadow-sm w-full lg:w-auto text-center">
                         Déconnexion
-                    </button>
+                    </Link>
                 </nav>
             </div>
         </header>
