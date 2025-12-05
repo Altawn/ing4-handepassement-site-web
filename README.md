@@ -60,6 +60,15 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
 
 - [ ] **Inscription**
     - [ ] Rendre les champs obligatoires.
+    - [ ] Ajouter champ aidant familial
+
+- [ ] **Prise de rendez-vous**
+    - [ ] Ajouter choix présentiel ou visio
+    - [ ] Ajouter selon ca lien visio ou localisation pour rdv (demander a Myriam)
+    - [ ] ajouter option de mettre des commentaires sur le rendez-vous
+
+- [ ] **BDD**
+    - [ ] gerer statut étudiant "en attente" après premier RDV
 
 ---
 *Projet réalisé dans le cadre de l'ING4.*
