@@ -13,7 +13,20 @@ const base = new Airtable({ apiKey }).base(baseId || '');
 // Table names
 export const TABLES = {
     ETUDIANT: 'Etudiant',
+    RDV: 'RDV',
 };
+
+// Interface for Appointment Data
+export interface RdvData {
+    date: Date;
+    type: 'Présentiel' | 'Visio';
+    status: 'Attente de Validation' | 'Réalisé';
+    lieu: string;
+    lienVisio: string; // "Lien Meet" or empty
+    commentaires: string;
+    studentEmail: string; // Used to find the student
+    admin: string; // "Myriam"
+}
 
 export interface StudentData {
     prenom: string;
@@ -198,3 +211,133 @@ export const getAllStudents = async () => {
     }
 };
 
+export const findStudentIdByEmail = async (email: string): Promise<string | null> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        const records = await base(TABLES.ETUDIANT).select({
+            filterByFormula: `{Adresse mail} = '${email}'`,
+            maxRecords: 1
+        }).firstPage();
+
+        if (records.length > 0) {
+            return records[0].id;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error finding student by email:", error);
+        return null;
+    }
+};
+
+
+export const createProspectStudent = async (email: string) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        const records = await base(TABLES.ETUDIANT).create([
+            {
+                fields: {
+                    "Adresse mail": email,
+                    "Statut": "En attente",
+                    "Nom Complet": email.split('@')[0], // Fallback name
+                    "Handicaps": [],
+                    "RDV": [],
+                    "To Do List": []
+                }
+            }
+        ], { typecast: true });
+
+        return records[0].id;
+    } catch (error) {
+        console.error("Error creating prospect student:", error);
+        throw error;
+    }
+};
+
+export const getNextRdvId = async (): Promise<number> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        const records = await base(TABLES.RDV).select({
+            sort: [{ field: "ID RDV", direction: "desc" }],
+            maxRecords: 1,
+            fields: ["ID RDV"]
+        }).firstPage();
+
+        if (records.length === 0) return 1;
+
+        const lastId = records[0].get("ID RDV");
+        // Handle cases where ID might be string or number
+        return Number(lastId) + 1;
+    } catch (error) {
+        console.error("Error calculating next RDV ID:", error);
+        return 1; // Fallback to 1 if error (though this might duplicate)
+    }
+};
+
+export const createRdv = async (data: RdvData) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        // 1. Find Student ID
+        let studentId = await findStudentIdByEmail(data.studentEmail);
+
+        // 2. If not found, create new "En attente" student
+        if (!studentId) {
+            console.log(`Student not found for ${data.studentEmail}, creating new prospect...`);
+            studentId = await createProspectStudent(data.studentEmail);
+        }
+
+        // 3. Format Date (Compensation GMT+1)
+        // On décale l'heure pour compenser la conversion UTC faite par toISOString()
+        // Si l'utilisateur choisit 16h (GMT+1), toISOString envoie 15h (UTC).
+        // On ajoute donc le décalage horaire pour que toISOString envoie 16h.
+        const offset = data.date.getTimezoneOffset() * 60000; // en ms
+        const localDate = new Date(data.date.getTime() - offset);
+        const dateString = localDate.toISOString().replace('Z', ''); // On retire le Z pour dire "c'est l'heure locale"
+
+        // 4. Get Next ID
+        const nextId = await getNextRdvId();
+
+        // 5. Create RDV Record
+        console.log("Creating RDV with payload:", {
+            "ID RDV": nextId,
+            "Date": dateString,
+            "Type d'entretien": data.type,
+            "Statut du RDV": data.status,
+            "Lieu": data.lieu,
+            "Lien visio": data.lienVisio,
+            "Commentaires": data.commentaires,
+            "Etudiant": [studentId],
+            "Administrateur": data.admin
+        });
+
+        const records = await base(TABLES.RDV).create([
+            {
+                fields: {
+                    "ID RDV": nextId,
+                    "Date": dateString,
+                    "Type d'entretien": data.type,
+                    "Statut du RDV": data.status,
+                    "Lieu": data.lieu,
+                    "Lien visio": data.lienVisio,
+                    "Commentaires": data.commentaires,
+                    "Etudiant": [studentId],
+                    "Administrateur": data.admin
+                }
+            }
+        ], { typecast: true });
+
+        return records[0];
+
+    } catch (error: any) {
+        console.error("Error creating RDV detailed:", {
+            message: error.message,
+            error: error.error,
+            statusCode: error.statusCode,
+            body: error.body
+        });
+        throw error;
+    }
+};

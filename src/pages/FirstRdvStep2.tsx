@@ -1,20 +1,25 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckCircle, X, MapPin, Video } from 'lucide-react';
-import HeaderMain from '../components/HeaderMain';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckCircle, X, MapPin, Video, MessageSquare } from 'lucide-react'; import HeaderMain from '../components/HeaderMain';
 import FooterOther from '../components/FooterOther';
+import { createRdv } from '../services/airtable';
 
 function FirstRdvStep2() {
     const navigate = useNavigate();
     const location = useLocation();
     const email = location.state?.email || '';
 
+
+
     // State management
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const [appointmentType, setAppointmentType] = useState<'presential' | 'video' | null>(null);
+    const [comment, setComment] = useState('');
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Available time slots
     const timeSlots = [
@@ -73,9 +78,40 @@ function FirstRdvStep2() {
         setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (selectedDate && selectedTime && appointmentType) {
-            setShowConfirmModal(true);
+            setIsSubmitting(true);
+            setError(null);
+
+            try {
+                // Parse time and combine with date
+                const [hours, minutes] = selectedTime.split(':').map(Number);
+                const rdvDate = new Date(selectedDate);
+                rdvDate.setHours(hours, minutes);
+
+                // Determine Lieu/Lien Visio based on type
+                // User requirement: "Pour lien visio met rien s'il choisit en présentiel et ecrit lien meet sil chosit cette option"
+                const lienVisio = appointmentType === 'video' ? 'Lien Meet' : '';
+                const lieu = appointmentType === 'presential' ? 'Bureau Handepassement' : '';
+
+                await createRdv({
+                    date: rdvDate,
+                    type: appointmentType === 'presential' ? 'Présentiel' : 'Visio',
+                    status: 'Attente de Validation',
+                    lieu: lieu,
+                    lienVisio: lienVisio,
+                    commentaires: comment,
+                    studentEmail: email, // From location state
+                    admin: 'Myriam'
+                });
+
+                setShowConfirmModal(true);
+            } catch (err: any) {
+                console.error("Erreur lors de la prise de rendez-vous:", err);
+                setError("Une erreur est survenue lors de la création du rendez-vous. Veuillez réessayer ou contacter l'administration.");
+            } finally {
+                setIsSubmitting(false);
+            }
         }
     };
 
@@ -249,6 +285,20 @@ function FirstRdvStep2() {
                                     </div>
                                 )}
                             </div>
+
+
+                            {/* Comment Section */}
+                            <div className="bg-white rounded-3xl shadow-xl p-8">
+                                <h2 className="text-xl font-bold text-gray-900 mb-2">Message (Optionnel)</h2>
+                                <p className="text-sm text-gray-600 mb-6">Avez-vous des précisions à nous apporter ?</p>
+
+                                <textarea
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
+                                    placeholder="Bonjour, j'aimerais aborder..."
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent min-h-[120px] resize-y"
+                                ></textarea>
+                            </div>
                         </div>
 
                         {/* Right Section - Recap */}
@@ -308,14 +358,21 @@ function FirstRdvStep2() {
 
                                     <button
                                         onClick={handleConfirm}
-                                        disabled={!selectedDate || !selectedTime || !appointmentType}
-                                        className={`w-full py-3 rounded-lg font-bold transition-colors ${selectedDate && selectedTime && appointmentType
+                                        disabled={!selectedDate || !selectedTime || !appointmentType || isSubmitting}
+                                        className={`w-full py-3 rounded-lg font-bold transition-colors flex justify-center items-center ${selectedDate && selectedTime && appointmentType && !isSubmitting
                                             ? 'bg-brand text-white hover:bg-brand-600'
                                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             }`}
                                     >
-                                        Confirmer le rendez-vous
+                                        {isSubmitting ? (
+                                            <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        ) : (
+                                            'Confirmer le rendez-vous'
+                                        )}
                                     </button>
+                                    {error && (
+                                        <p className="text-red-500 text-sm mt-2 text-center">{error}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -323,66 +380,79 @@ function FirstRdvStep2() {
                 </div>
             </div>
 
+
             {/* Confirmation Modal */}
-            {showConfirmModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
-                    <div className="bg-white rounded-3xl p-8 max-w-md w-full relative animate-fade-in">
-                        <button
-                            onClick={() => setShowConfirmModal(false)}
-                            className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            <X className="w-5 h-5 text-gray-500" />
-                        </button>
-
-                        <div className="text-center">
-                            {/* Success Icon */}
-                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <CheckCircle className="w-8 h-8 text-green-500" />
-                            </div>
-
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Rendez-vous confirmé !</h2>
-
-                            <p className="text-gray-600 mb-6">
-                                Votre premier rendez-vous a été programmé avec succès pour le
-                            </p>
-
-                            <div className="bg-gray-50 rounded-xl p-6 mb-6 text-left">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <CalendarIcon className="w-5 h-5 text-brand" />
-                                    <p className="font-bold text-gray-900 capitalize">
-                                        {selectedDate && formatSelectedDate(selectedDate)}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-3 mb-3">
-                                    <Clock className="w-5 h-5 text-brand" />
-                                    <p className="font-bold text-gray-900">{selectedTime}</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {appointmentType === 'presential' ? (
-                                        <MapPin className="w-5 h-5 text-brand" />
-                                    ) : (
-                                        <Video className="w-5 h-5 text-brand" />
-                                    )}
-                                    <p className="font-bold text-gray-900">
-                                        {appointmentType === 'presential' ? 'En présentiel' : 'En visio'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <p className="text-sm text-gray-600 mb-8">
-                                Vous allez recevoir un email de confirmation avec tous les détails.
-                            </p>
-
+            {
+                showConfirmModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
+                        <div className="bg-white rounded-3xl p-8 max-w-md w-full relative animate-fade-in">
                             <button
-                                onClick={handleBackToHome}
-                                className="w-full py-3 bg-brand text-white font-bold rounded-lg hover:bg-brand-600 transition-colors"
+                                onClick={() => setShowConfirmModal(false)}
+                                className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-lg transition-colors"
                             >
-                                Retour à l'accueil
+                                <X className="w-5 h-5 text-gray-500" />
                             </button>
+
+                            <div className="text-center">
+                                {/* Success Icon */}
+                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <CheckCircle className="w-8 h-8 text-green-500" />
+                                </div>
+
+                                <h2 className="text-2xl font-bold text-gray-900 mb-4">Rendez-vous confirmé !</h2>
+
+                                <p className="text-gray-600 mb-6">
+                                    Votre premier rendez-vous a été programmé avec succès pour le
+                                </p>
+
+                                <div className="bg-gray-50 rounded-xl p-6 mb-6 text-left">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <CalendarIcon className="w-5 h-5 text-brand" />
+                                        <p className="font-bold text-gray-900 capitalize">
+                                            {selectedDate && formatSelectedDate(selectedDate!)}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <Clock className="w-5 h-5 text-brand" />
+                                        <p className="font-bold text-gray-900">{selectedTime}</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        {appointmentType === 'presential' ? (
+                                            <MapPin className="w-5 h-5 text-brand" />
+                                        ) : (
+                                            <Video className="w-5 h-5 text-brand" />
+                                        )}
+                                        <p className="font-bold text-gray-900">
+                                            {appointmentType === 'presential' ? 'En présentiel' : 'En visio'}
+                                        </p>
+                                    </div>
+                                    {comment && (
+                                        <div className="mt-4 pt-4 border-t border-gray-200">
+                                            <div className="flex gap-3">
+                                                <MessageSquare className="w-5 h-5 text-brand flex-shrink-0" />
+                                                <p className="text-sm text-gray-600">
+                                                    "{comment}"
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <p className="text-sm text-gray-600 mb-8">
+                                    Vous allez recevoir un email de confirmation avec tous les détails.
+                                </p>
+
+                                <button
+                                    onClick={handleBackToHome}
+                                    className="w-full py-3 bg-brand text-white font-bold rounded-lg hover:bg-brand-600 transition-colors"
+                                >
+                                    Retour à l'accueil
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <FooterOther />
         </>
