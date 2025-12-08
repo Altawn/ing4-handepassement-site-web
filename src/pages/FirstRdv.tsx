@@ -7,8 +7,25 @@ import FooterOther from '../components/FooterOther';
 function FirstRdv() {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
+    const [error, setError] = useState('');
+
+    const validateEmail = (email: string) => {
+        return String(email)
+            .toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+    };
 
     const handleContinue = () => {
+        if (!email) {
+            setError('L\'adresse email est obligatoire');
+            return;
+        }
+        if (!validateEmail(email)) {
+            setError('Veuillez entrer une adresse email valide');
+            return;
+        }
         // Navigate to appointment selection page with email
         navigate('/premier-rdv/selection', { state: { email } });
     };
@@ -42,25 +59,29 @@ function FirstRdv() {
                             </div>
 
                             <p className="text-gray-600 mb-4">
-                                Veuillez nous indiquer votre addresse email pour poursuivre
+                                Veuillez nous indiquer votre adresse email pour poursuivre
                             </p>
 
                             <div className="mb-2">
                                 <label htmlFor="email" className="block text-sm font-semibold text-gray-900 mb-2">
-                                    Addresse email <span className="text-red-500">*</span>
+                                    Adresse email <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="email"
                                     id="email"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        if (error) setError('');
+                                    }}
                                     placeholder="example@gmail.com"
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent ${error ? 'border-red-500' : 'border-gray-300'}`}
                                 />
+                                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
                             </div>
 
                             <p className="text-sm text-gray-500">
-                                Cette addresse sera utilisée pour vous envoyer la confirmation de votre rendez-vous
+                                Cette adresse sera utilisée pour vous envoyer la confirmation de votre rendez-vous
                             </p>
                         </div>
 

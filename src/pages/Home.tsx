@@ -1,9 +1,11 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Calendar, Users, BookOpen, Heart, CheckCircle } from 'lucide-react';
 import heroImage from '../assets/images/image-accueil.png';
 import HeaderMain from '../components/HeaderMain'
 import FooterOther from '../components/FooterOther'
 import Oeil from '../components/Oeil'
+import { smoothScrollTo } from '../utils/smoothScroll';
 
 function Home() {
     const services = [
@@ -34,6 +36,19 @@ function Home() {
         "Phobie scolaire", "Handicap moteur", "Dyscalculie",
         "Déficience visuelle", "Déficience auditive", "Dysgraphie"
     ];
+
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state && location.state.scrollTo) {
+            // Petit délai pour s'assurer que le rendu est terminé
+            setTimeout(() => {
+                smoothScrollTo(location.state.scrollTo, 2000); // 2 secondes
+            }, 100);
+            // On nettoie le state pour éviter de rescroller si on refresh
+            window.history.replaceState({}, document.title);
+        }
+    }, [location]);
 
     return (
         <>
