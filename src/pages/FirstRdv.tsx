@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail } from 'lucide-react';
-import HeaderMain from '../components/HeaderMain';
+import HeaderInscription from '../components/HeaderInscription';
 import FooterOther from '../components/FooterOther';
 
 function FirstRdv() {
@@ -19,9 +19,9 @@ function FirstRdv() {
 
     return (
         <>
-            <HeaderMain />
-            <div className="min-h-screen bg-accent-50 py-12 px-6">
-                <div className="container mx-auto max-w-2xl">
+            <div className="min-h-screen bg-accent-50 pt-6 pb-12 px-6 flex flex-col">
+                <HeaderInscription />
+                <div className="container mx-auto max-w-2xl flex-1 flex items-center justify-center py-8">
                     {/* Main Card */}
                     <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
                         {/* Header Section */}

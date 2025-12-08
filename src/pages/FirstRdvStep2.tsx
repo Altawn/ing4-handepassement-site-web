@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckCircle, X, MapPin, Video, MessageSquare } from 'lucide-react'; import HeaderMain from '../components/HeaderMain';
 import FooterOther from '../components/FooterOther';
 import { createRdv } from '../services/airtable';
+import HeaderInscription from '../components/HeaderInscription';
 
 function FirstRdvStep2() {
     const navigate = useNavigate();
@@ -125,9 +126,9 @@ function FirstRdvStep2() {
 
     return (
         <>
-            <HeaderMain />
-            <div className="min-h-screen bg-accent-50 py-12 px-6">
-                <div className="container mx-auto max-w-6xl">
+            <div className="min-h-screen bg-accent-50 pt-6 pb-12 px-6 flex flex-col">
+                <HeaderMain />
+                <div className="container mx-auto max-w-6xl flex-1">
                     {/* Back Button */}
                     <button
                         onClick={() => navigate(-1)}

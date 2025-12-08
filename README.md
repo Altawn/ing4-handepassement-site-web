@@ -61,6 +61,8 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
 - [ ] **Inscription**
     - [ ] Rendre les champs obligatoires.
     - [ ] Ajouter champ aidant familial
+    - [ ] En mode Tritanopie, la page inscription est floutée 
+    - [ ] Modal et oeil bloqué en mode Tritanopie et les autres 
 
 - [ ] **Prise de rendez-vous**
     - [ ] Ajouter selon choix présentiel ou visio un lien visio ou localisation pour rdv (demander a Myriam)
@@ -68,6 +70,9 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
 - [ ] **BDD**
     - [ ] Gérer statut étudiant "en attente" après premier RDV - voir comment coté admin
     - [ ] Verif si l'étudiant est déjà dans la base en tant que "Etudiant" avant d'autoriser l'inscription
+
+- [ ] **Connexion**
+    - [ ] Footer qui est en haut de la page
 
 ---
 *Projet réalisé dans le cadre de l'ING4.*

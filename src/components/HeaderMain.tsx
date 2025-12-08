@@ -7,8 +7,8 @@ const HeaderMain: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
     return (
-        <header className="w-[95%] lg:w-[98%] bg-brand rounded-[2rem] lg:rounded-full px-4 lg:px-6 mb-6 mx-auto lg:mx-4 relative z-50">
-            <div className="container mx-auto flex flex-col lg:flex-row items-center justify-between py-4 lg:py-0 gap-4 lg:gap-0">
+        <header className="w-[95%] lg:w-[98%] bg-brand rounded-[2rem] lg:rounded-full px-4 lg:px-8 mb-6 mx-auto lg:mx-4 relative z-50">
+            <div className="container mx-auto flex flex-col lg:flex-row items-center justify-between py-3 lg:py-2 gap-4 lg:gap-0">
                 <div className="w-full lg:w-auto flex items-center justify-between">
                     {/* Logo Section */}
                     <Link to="/" className="flex items-center gap-3 lg:gap-4 group">
@@ -32,7 +32,7 @@ const HeaderMain: React.FC = () => {
                 </div>
 
                 {/* Navigation Section */}
-                <nav className={`${isMenuOpen ? 'flex' : 'hidden'} absolute top-full right-0 mt-4 w-64 bg-white rounded-2xl shadow-xl p-6 flex-col gap-4 lg:static lg:flex lg:flex-row lg:items-center lg:justify-end lg:gap-6 xl:gap-16 lg:w-auto lg:bg-transparent lg:shadow-none lg:p-0`}>
+                <nav className={`${isMenuOpen ? 'flex' : 'hidden'} absolute top-full right-0 mt-4 w-64 bg-white rounded-2xl shadow-xl p-6 flex-col gap-4 lg:static lg:flex lg:flex-row lg:items-center lg:justify-end lg:gap-6 xl:gap-16 lg:w-auto lg:bg-transparent lg:shadow-none lg:p-0 lg:mt-0`}>
 
                     <a href="/#concerns-section" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
                         Êtes-vous concerné ?
