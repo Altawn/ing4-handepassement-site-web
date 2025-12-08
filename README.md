@@ -72,7 +72,7 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
     - [ ] Verif si l'étudiant est déjà dans la base en tant que "Etudiant" avant d'autoriser l'inscription
 
 - [ ] **Connexion**
-    - [ ] Footer qui est en haut de la page
+    - [x] Footer qui est en haut de la page
 
 ---
 *Projet réalisé dans le cadre de l'ING4.*

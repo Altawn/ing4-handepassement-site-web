@@ -42,9 +42,9 @@ function Connexion() {
     };
 
     return (
-        <div className="min-h-screen bg-accent-50">
+        <div className="min-h-screen bg-accent-50 flex flex-col pt-6">
             <HeaderMain />
-            <div className=" py-12 px-6 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center py-12 px-6">
                 <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 max-w-md w-full">
                     {/* Header */}
                     <div className="text-center mb-8">
@@ -119,9 +119,8 @@ function Connexion() {
                     </div>
                 </div>
 
-                {/* Accessibility Button */}
-                <Oeil />
             </div>
+            <Oeil />
             <FooterOther />
         </div>
     );
