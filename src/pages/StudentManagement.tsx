@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import HeaderAdmin from '../components/HeaderAdmin';
 import FooterMain from '../components/FooterMain';
 import { getAllStudents } from '../services/airtable';
@@ -135,10 +136,13 @@ function StudentManagement() {
                                                 {/* Empty as requested */}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button className="text-gray-400 hover:text-brand transition-colors flex items-center justify-end gap-2 ml-auto">
+                                                <Link
+                                                    to={`/admin/etudiant/${student.id}`}
+                                                    className="text-gray-400 hover:text-brand transition-colors flex items-center justify-end gap-2 ml-auto"
+                                                >
                                                     <Eye className="w-5 h-5" />
                                                     <span>Détail</span>
-                                                </button>
+                                                </Link>
                                             </td>
                                         </tr>
                                     ))

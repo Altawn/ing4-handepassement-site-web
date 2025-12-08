@@ -36,19 +36,22 @@ const HeaderAdmin: React.FC = () => {
                     <Link to="/admin/gestion-etudiants" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
                         Membres
                     </Link>
-                    <Link to="/documentation" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
+                    <Link to="/admin/documentation" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
                         Documentation
                     </Link>
                     <Link to="/admin" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
                         Mon espace
                     </Link>
-                    <Link to="/rdv" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
+                    <Link to="/admin/rdv" className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl">
                         RDV
                     </Link>
 
-                    <button className="px-8 py-3 lg:px-6 lg:py-3 xl:px-10 xl:py-4 bg-accent text-brand text-lg lg:text-base xl:text-xl font-bold rounded-full hover:bg-accent-400 transition-colors shadow-sm w-full lg:w-auto">
+                    <Link
+                        to="/"
+                        className="px-8 py-3 lg:px-6 lg:py-3 xl:px-10 xl:py-4 bg-accent text-brand text-lg lg:text-base xl:text-xl font-bold rounded-full hover:bg-accent-400 transition-colors shadow-sm w-full lg:w-auto text-center"
+                    >
                         Déconnexion
-                    </button>
+                    </Link>
                 </nav>
             </div>
         </header>
