@@ -416,3 +416,41 @@ export const getUpcomingAppointments = async (limit: number = 3): Promise<Incomi
         return [];
     }
 };
+
+export const getAllAppointments = async (): Promise<IncomingRdv[]> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        const records = await base(TABLES.RDV).select({
+            sort: [{ field: "Date", direction: "desc" }]
+        }).all();
+
+        const appointments = await Promise.all(records.map(async (record) => {
+            const studentIds = (record.get('Etudiant') as string[]) || [];
+            let studentName = "Inconnu";
+
+            if (studentIds.length > 0) {
+                try {
+                    const studentRecord = await base(TABLES.ETUDIANT).find(studentIds[0]);
+                    studentName = studentRecord.get('Nom Complet') as string || "Sans Nom";
+                } catch (err) {
+                    console.error("Could not fetch student name for RDV", record.id);
+                }
+            }
+
+            return {
+                id: record.id,
+                studentName: studentName,
+                type: record.get("Type d'entretien") as string,
+                date: record.get("Date") as string,
+                status: record.get("Statut du RDV") as string,
+                // Add extended fields if needed but IncomingRdv is enough for list
+            };
+        }));
+
+        return appointments;
+    } catch (error) {
+        console.error("Error fetching all appointments:", error);
+        return [];
+    }
+};

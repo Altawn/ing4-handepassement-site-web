@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAllAppointments, IncomingRdv } from '../services/airtable';
 import { Calendar as CalendarIcon, Clock, Plus, Edit, X, CheckCircle } from 'lucide-react';
 import HeaderAdmin from '../components/HeaderAdmin';
 import FooterMain from '../components/FooterMain';
@@ -20,58 +21,53 @@ const RDVAdmin: React.FC = () => {
     const [isEditAppointmentModalOpen, setIsEditAppointmentModalOpen] = useState(false);
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [filterDate, setFilterDate] = useState<Date | null>(null);
     const [appointmentToEdit, setAppointmentToEdit] = useState<Appointment | null>(null);
 
-    const [appointments, setAppointments] = useState<Appointment[]>([
-        {
-            id: 1,
-            studentName: 'Marie Dubois',
-            type: 'Suivi pédagogique',
-            date: '2024-03-15',
-            time: '14:00',
-            status: 'confirmé',
-            counselor: 'Myriam Lefèvre'
-        },
-        {
-            id: 2,
-            studentName: 'Pierre Martin',
-            type: 'Orientation',
-            date: '2024-03-15',
-            time: '15:30',
-            status: 'confirmé',
-            counselor: 'Myriam Lefèvre'
-        },
-        {
-            id: 3,
-            studentName: 'Sophie Laurent',
-            type: 'Aménagement examens',
-            date: '2024-03-16',
-            time: '18:00',
-            status: 'en attente',
-            counselor: 'Myriam Lefèvre'
-        }
-    ]);
 
-    const [pastAppointments] = useState<Appointment[]>([
-        {
-            id: 4,
-            studentName: 'Jean Dupont',
-            type: 'Premier rendez-vous',
-            date: '2024-03-10',
-            time: '10:00',
-            status: 'confirmé',
-            counselor: 'Myriam Lefèvre'
-        },
-        {
-            id: 5,
-            studentName: 'Alice Martin',
-            type: 'Suivi',
-            date: '2024-03-08',
-            time: '14:30',
-            status: 'confirmé',
-            counselor: 'Myriam Lefèvre'
-        }
-    ]);
+    const [appointments, setAppointments] = useState<IncomingRdv[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAppointments = async () => {
+            try {
+                const data = await getAllAppointments();
+                setAppointments(data);
+            } catch (error) {
+                console.error("Failed to fetch appointments", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchAppointments();
+    }, []);
+
+    const now = new Date();
+
+    // Filter by date if selected
+    const filteredAppointments = filterDate
+        ? appointments.filter(apt => {
+            const aptDate = new Date(apt.date);
+            return aptDate.getDate() === filterDate.getDate() &&
+                aptDate.getMonth() === filterDate.getMonth() &&
+                aptDate.getFullYear() === filterDate.getFullYear();
+        })
+        : appointments;
+
+    // Split and Sort
+    // Upcoming: Closest to furthest (Ascending)
+    const upcomingAppointments = filteredAppointments
+        .filter(apt => new Date(apt.date) >= now)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Past: Closest to furthest (Descending from now)
+    const pastAppointments = filteredAppointments
+        .filter(apt => new Date(apt.date) < now)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const upcomingCount = upcomingAppointments.length;
+    const pastCount = pastAppointments.length;
 
     const [newAppointment, setNewAppointment] = useState({
         student: '',
@@ -92,75 +88,10 @@ const RDVAdmin: React.FC = () => {
         time: ''
     });
 
-    const handleCreateAppointment = () => {
-        if (newAppointment.student && newAppointment.type && newAppointment.date && newAppointment.time) {
-            const appointment: Appointment = {
-                id: appointments.length + 1,
-                studentName: newAppointment.student,
-                type: newAppointment.type,
-                date: newAppointment.date,
-                time: newAppointment.time,
-                status: 'confirmé',
-                counselor: 'Myriam Lefèvre'
-            };
-            setAppointments([...appointments, appointment]);
-            setConfirmedAppointment({
-                date: newAppointment.date,
-                time: newAppointment.time
-            });
-            setNewAppointment({
-                student: '',
-                type: '',
-                date: '',
-                time: ''
-            });
-            setIsNewAppointmentModalOpen(false);
-            setIsConfirmationModalOpen(true);
-        }
-    };
-
-    const handleEditAppointment = () => {
-        if (appointmentToEdit && editAppointment.student && editAppointment.type && editAppointment.date && editAppointment.time) {
-            const updatedAppointments = appointments.map(apt =>
-                apt.id === appointmentToEdit.id
-                    ? {
-                        ...apt,
-                        studentName: editAppointment.student,
-                        type: editAppointment.type,
-                        date: editAppointment.date,
-                        time: editAppointment.time
-                    }
-                    : apt
-            );
-            setAppointments(updatedAppointments);
-            setIsEditAppointmentModalOpen(false);
-            setAppointmentToEdit(null);
-            setEditAppointment({
-                student: '',
-                type: '',
-                date: '',
-                time: ''
-            });
-        }
-    };
-
-    const openEditModal = (apt: Appointment) => {
-        setAppointmentToEdit(apt);
-        setEditAppointment({
-            student: apt.studentName,
-            type: apt.type,
-            date: apt.date,
-            time: apt.time
-        });
-        setIsEditAppointmentModalOpen(true);
-    };
-
-    const handleCancelAppointment = (id: number) => {
-        setAppointments(appointments.filter(apt => apt.id !== id));
-    };
-
-    const upcomingCount = appointments.length;
-    const pastCount = pastAppointments.length;
+    // Mock handlers to satisfy lints
+    const handleCreateAppointment = () => { console.log('Create not implemented'); setIsNewAppointmentModalOpen(false); };
+    const handleEditAppointment = () => { console.log('Edit not implemented'); setIsEditAppointmentModalOpen(false); };
+    const openEditModal = (apt: any) => { console.log('Edit modal not implemented', apt); };
 
     // Simple calendar component
     const renderCalendar = () => {
@@ -178,18 +109,44 @@ const RDVAdmin: React.FC = () => {
             days.push(<div key={`empty-${i}`} className="p-2"></div>);
         }
         for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(currentYear, currentMonth, day);
             const isToday = day === new Date().getDate() &&
                 currentMonth === new Date().getMonth() &&
                 currentYear === new Date().getFullYear();
+
+            const isSelected = filterDate &&
+                day === filterDate.getDate() &&
+                currentMonth === filterDate.getMonth() &&
+                currentYear === filterDate.getFullYear();
+
+            const hasAppointment = appointments.some(apt => {
+                const aptDate = new Date(apt.date);
+                return aptDate.getDate() === day &&
+                    aptDate.getMonth() === currentMonth &&
+                    aptDate.getFullYear() === currentYear;
+            });
+
             days.push(
                 <div
                     key={day}
-                    className={`p-2 text-center text-sm cursor-pointer rounded-lg transition-colors ${isToday
-                        ? 'bg-brand text-white font-bold'
-                        : 'hover:bg-gray-100'
-                        }`}
+                    onClick={() => {
+                        if (isSelected) {
+                            setFilterDate(null);
+                        } else {
+                            setFilterDate(date);
+                        }
+                    }}
+                    className={`p-2 text-center text-sm cursor-pointer rounded-lg transition-colors relative
+                        ${isSelected ? 'bg-brand text-white font-bold' :
+                            isToday ? 'bg-blue-100 text-brand font-bold' :
+                                'hover:bg-gray-100 text-gray-700'
+                        }
+                    `}
                 >
                     {day}
+                    {hasAppointment && !isSelected && (
+                        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-brand rounded-full"></div>
+                    )}
                 </div>
             );
         }
@@ -200,11 +157,21 @@ const RDVAdmin: React.FC = () => {
                 <p className="text-sm text-gray-500 mb-4">Sélectionner une date</p>
 
                 <div className="mb-4 flex items-center justify-between">
-                    <button className="p-1 hover:bg-gray-100 rounded">❮</button>
+                    <button
+                        onClick={() => setSelectedDate(new Date(currentYear, currentMonth - 1, 1))}
+                        className="p-1 hover:bg-gray-100 rounded"
+                    >
+                        ❮
+                    </button>
                     <span className="font-semibold text-gray-900">
                         {monthNames[currentMonth]} {currentYear}
                     </span>
-                    <button className="p-1 hover:bg-gray-100 rounded">❯</button>
+                    <button
+                        onClick={() => setSelectedDate(new Date(currentYear, currentMonth + 1, 1))}
+                        className="p-1 hover:bg-gray-100 rounded"
+                    >
+                        ❯
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-7 gap-1 mb-2">
@@ -286,7 +253,7 @@ const RDVAdmin: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-4">
-                                        {activeTab === 'upcoming' && appointments.map((apt) => (
+                                        {activeTab === 'upcoming' && upcomingAppointments.map((apt) => (
                                             <div key={apt.id} className="border border-gray-200 rounded-lg p-6">
                                                 <div className="flex items-start justify-between mb-4">
                                                     <div className="flex-1">
@@ -305,30 +272,30 @@ const RDVAdmin: React.FC = () => {
                                                         <div className="flex items-center gap-4 text-sm text-gray-500">
                                                             <div className="flex items-center gap-1">
                                                                 <CalendarIcon className="w-4 h-4" />
-                                                                {apt.date}
+                                                                {new Date(apt.date).toLocaleDateString()}
                                                             </div>
                                                             <div className="flex items-center gap-1">
                                                                 <Clock className="w-4 h-4" />
-                                                                {apt.time}
+                                                                {new Date(apt.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
                                                     <button
-                                                        onClick={() => openEditModal(apt)}
+                                                        onClick={() => { }} // openEditModal(apt) - disabled for now
                                                         className="inline-flex items-center gap-1 text-gray-700 hover:text-brand font-medium text-sm transition-colors"
                                                     >
                                                         <Edit className="w-4 h-4" />
                                                         Modifier
                                                     </button>
-                                                    <button
+                                                    {/*  <button
                                                         onClick={() => handleCancelAppointment(apt.id)}
                                                         className="inline-flex items-center gap-1 text-red-500 hover:text-red-600 font-medium text-sm transition-colors"
                                                     >
                                                         <X className="w-4 h-4" />
                                                         Annuler
-                                                    </button>
+                                                    </button> */}
                                                 </div>
                                             </div>
                                         ))}
@@ -342,11 +309,11 @@ const RDVAdmin: React.FC = () => {
                                                         <div className="flex items-center gap-4 text-sm text-gray-500">
                                                             <div className="flex items-center gap-1">
                                                                 <CalendarIcon className="w-4 h-4" />
-                                                                {apt.date}
+                                                                {new Date(apt.date).toLocaleDateString()}
                                                             </div>
                                                             <div className="flex items-center gap-1">
                                                                 <Clock className="w-4 h-4" />
-                                                                {apt.time}
+                                                                {new Date(apt.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </div>
                                                         </div>
                                                     </div>
