@@ -335,9 +335,84 @@ export const createRdv = async (data: RdvData) => {
         console.error("Error creating RDV detailed:", {
             message: error.message,
             error: error.error,
-            statusCode: error.statusCode,
-            body: error.body
+            statusCode: error.statusCode
         });
         throw error;
+    }
+};
+
+export const getDashboardStats = async () => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        // 1. Count RDVs this month
+        // Formula: AND(MONTH({Date}) = MONTH(TODAY()), YEAR({Date}) = YEAR(TODAY()))
+        const monthRecords = await base(TABLES.RDV).select({
+            filterByFormula: "AND(MONTH({Date}) = MONTH(TODAY()), YEAR({Date}) = YEAR(TODAY()))",
+            fields: ["ID RDV"] // Minimal fields
+        }).all();
+
+        // 2. Count Pending Validations
+        const pendingRecords = await base(TABLES.RDV).select({
+            filterByFormula: "{Statut du RDV} = 'Attente de Validation'",
+            fields: ["ID RDV"]
+        }).all();
+
+        return {
+            appointmentsThisMonth: monthRecords.length,
+            pendingValidations: pendingRecords.length
+        };
+    } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+        return { appointmentsThisMonth: 0, pendingValidations: 0 };
+    }
+};
+
+export interface IncomingRdv {
+    id: string;
+    studentName: string;
+    type: string;
+    date: string;
+    status: string;
+}
+
+export const getUpcomingAppointments = async (limit: number = 3): Promise<IncomingRdv[]> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        // Filter: Date >= TODAY
+        // Sort: Date ASC
+        const records = await base(TABLES.RDV).select({
+            filterByFormula: "IS_AFTER({Date}, NOW())",
+            sort: [{ field: "Date", direction: "asc" }],
+            maxRecords: limit
+        }).firstPage();
+
+        const upcomingRdvs = await Promise.all(records.map(async (record) => {
+            const studentIds = (record.get('Etudiant') as string[]) || [];
+            let studentName = "Inconnu";
+
+            if (studentIds.length > 0) {
+                try {
+                    const studentRecord = await base(TABLES.ETUDIANT).find(studentIds[0]);
+                    studentName = studentRecord.get('Nom Complet') as string || "Sans Nom";
+                } catch (err) {
+                    console.error("Could not fetch student name for RDV", record.id);
+                }
+            }
+
+            return {
+                id: record.id,
+                studentName: studentName,
+                type: record.get("Type d'entretien") as string,
+                date: record.get("Date") as string,
+                status: record.get("Statut du RDV") as string
+            };
+        }));
+
+        return upcomingRdvs;
+    } catch (error) {
+        console.error("Error fetching upcoming appointments:", error);
+        return [];
     }
 };

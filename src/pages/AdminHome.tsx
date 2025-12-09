@@ -3,25 +3,35 @@ import HeaderAdmin from '../components/HeaderAdmin';
 import FooterMain from '../components/FooterMain';
 import Oeil from '../components/Oeil';
 import { Users, Calendar, FileText, Clock } from 'lucide-react';
-import { getStudentCount } from '../services/airtable';
+import { getStudentCount, getDashboardStats, getUpcomingAppointments, IncomingRdv } from '../services/airtable';
 
 function AdminHome() {
+
     const [studentCount, setStudentCount] = useState<number | null>(null);
+    const [stats, setStats] = useState({ appointmentsThisMonth: 0, pendingValidations: 0 });
+    const [upcomingRdvs, setUpcomingRdvs] = useState<IncomingRdv[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchStats = async () => {
+        const fetchDashboardData = async () => {
             try {
-                const count = await getStudentCount();
+                const [count, dashboardStats, upcoming] = await Promise.all([
+                    getStudentCount(),
+                    getDashboardStats(),
+                    getUpcomingAppointments(3)
+                ]);
+
                 setStudentCount(count);
+                setStats(dashboardStats);
+                setUpcomingRdvs(upcoming);
             } catch (error) {
-                console.error("Failed to fetch stats", error);
+                console.error("Failed to fetch dashboard data", error);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchStats();
+        fetchDashboardData();
     }, []);
 
     return (
@@ -56,8 +66,10 @@ function AdminHome() {
                         <div className="flex justify-between items-start">
                             <div>
                                 <p className="text-sm font-medium text-gray-500 mb-1">Rendez-vous ce mois</p>
-                                <h2 className="text-3xl font-bold text-gray-900">19</h2>
-                                <p className="text-xs text-gray-500 mt-2">+5 cette semaine</p>
+                                <h2 className="text-3xl font-bold text-gray-900">
+                                    {isLoading ? '...' : stats.appointmentsThisMonth}
+                                </h2>
+                                <p className="text-xs text-gray-500 mt-2">Ce mois-ci</p>
                             </div>
                             <div className="p-3 bg-green-50 rounded-lg">
                                 <Calendar className="w-6 h-6 text-green-600" />
@@ -70,7 +82,9 @@ function AdminHome() {
                         <div className="flex justify-between items-start">
                             <div>
                                 <p className="text-sm font-medium text-gray-500 mb-1">Actions à valider</p>
-                                <h2 className="text-3xl font-bold text-gray-900">23</h2>
+                                <h2 className="text-3xl font-bold text-gray-900">
+                                    {isLoading ? '...' : stats.pendingValidations}
+                                </h2>
                             </div>
                             <div className="p-3 bg-yellow-50 rounded-lg">
                                 <FileText className="w-6 h-6 text-yellow-600" />
@@ -92,62 +106,38 @@ function AdminHome() {
                     </div>
 
                     <div className="divide-y divide-gray-50">
-                        {/* Appointment Item 1 */}
-                        <div className="p-6 hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-semibold text-gray-900">Marie Dubois</h3>
-                                    <p className="text-sm text-gray-500">Suivi aménagement</p>
-                                    <div className="flex items-center mt-2 text-xs text-gray-400">
-                                        <Calendar className="w-3 h-3 mr-1" />
-                                        <span className="mr-3">2024-03-15</span>
-                                        <Clock className="w-3 h-3 mr-1" />
-                                        <span>14:00</span>
+                        {isLoading ? (
+                            <div className="p-6 text-center text-gray-500">Chargement...</div>
+                        ) : upcomingRdvs.length === 0 ? (
+                            <div className="p-6 text-center text-gray-500">Aucun rendez-vous à venir</div>
+                        ) : (
+                            upcomingRdvs.map((rdv) => (
+                                <div key={rdv.id} className="p-6 hover:bg-gray-50 transition-colors">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900">{rdv.studentName}</h3>
+                                            <p className="text-sm text-gray-500">{rdv.type}</p>
+                                            <div className="flex items-center mt-2 text-xs text-gray-400">
+                                                <Calendar className="w-3 h-3 mr-1" />
+                                                <span className="mr-3">
+                                                    {new Date(rdv.date).toLocaleDateString()}
+                                                </span>
+                                                <Clock className="w-3 h-3 mr-1" />
+                                                <span>
+                                                    {new Date(rdv.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <span className={`px-3 py-1 text-xs font-medium rounded-full ${rdv.status === 'Réalisé' ? 'text-green-700 bg-green-100' :
+                                            rdv.status === 'Attente de Validation' ? 'text-yellow-700 bg-yellow-100' :
+                                                'text-blue-700 bg-blue-100'
+                                            }`}>
+                                            {rdv.status}
+                                        </span>
                                     </div>
                                 </div>
-                                <span className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                                    confirmé
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Appointment Item 2 */}
-                        <div className="p-6 hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-semibold text-gray-900">Pierre Martin</h3>
-                                    <p className="text-sm text-gray-500">Premier Rendez-vous</p>
-                                    <div className="flex items-center mt-2 text-xs text-gray-400">
-                                        <Calendar className="w-3 h-3 mr-1" />
-                                        <span className="mr-3">2024-03-15</span>
-                                        <Clock className="w-3 h-3 mr-1" />
-                                        <span>15:30</span>
-                                    </div>
-                                </div>
-                                <span className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                                    confirmé
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Appointment Item 3 */}
-                        <div className="p-6 hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-semibold text-gray-900">Sophie Laurent</h3>
-                                    <p className="text-sm text-gray-500">Premier Rendez-vous</p>
-                                    <div className="flex items-center mt-2 text-xs text-gray-400">
-                                        <Calendar className="w-3 h-3 mr-1" />
-                                        <span className="mr-3">2024-03-16</span>
-                                        <Clock className="w-3 h-3 mr-1" />
-                                        <span>10:00</span>
-                                    </div>
-                                </div>
-                                <span className="px-3 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">
-                                    en attente
-                                </span>
-                            </div>
-                        </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </main>
