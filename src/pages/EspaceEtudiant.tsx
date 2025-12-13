@@ -13,6 +13,7 @@ function EspaceEtudiant() {
     const [rdvs, setRdvs] = useState<StudentRdv[]>([]);
     const [loadingTasks, setLoadingTasks] = useState(true);
 
+
     useEffect(() => {
         // Load user from local storage
         const storedUser = localStorage.getItem('user');
@@ -70,7 +71,7 @@ function EspaceEtudiant() {
                     {/* Welcome Section */}
                     <div className="mb-8">
                         <h1 className="text-3xl font-bold text-gray-900 mb-1">
-                            Bonjour, {user ? user['Nom Complet'].split(' ')[0] : 'Etudiant'} ! 👋
+                            Bonjour, {user && user['Nom Complet'] ? user['Nom Complet'].split(' ')[0] : 'Etudiant'} ! 👋
                         </h1>
                         <p className="text-gray-500 font-medium">Espace personnel</p>
                     </div>

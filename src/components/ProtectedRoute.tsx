@@ -23,6 +23,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
             if (role === 'Admin') {
                 return userRole === 'Admin' || userRole === 'Administrateur';
             }
+            if (role === 'Etudiant') {
+                return userRole === 'Étudiant' || userRole === 'Etudiant';
+            }
             return userRole === role;
         });
 

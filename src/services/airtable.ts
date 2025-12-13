@@ -614,17 +614,6 @@ export const checkBookingEligibility = async (email: string): Promise<{ allowed:
 
         const hasActive = rdvs.some(rdv => {
             const rdvStatus = rdv.get('Statut du RDV') as string;
-            const rdvDateStr = rdv.get('Date') as string;
-
-            // If date is passed, we allow booking another one (it's not "active" for blocking purposes)
-            if (rdvDateStr) {
-                const rdvDate = new Date(rdvDateStr);
-                const now = new Date();
-                if (rdvDate < now) {
-                    return false;
-                }
-            }
-
             return rdvStatus !== 'Annulé' && rdvStatus !== 'Reporté';
         });
 
@@ -683,7 +672,7 @@ export const getTasksForStudent = async (studentId: string): Promise<Task[]> => 
             id: record.id,
             title: record.get('Description') as string,
             date: record.get('Échéance') as string,
-            completed: record.get('Fait') === 'Oui' // Map "Oui" string to true boolean
+            completed: record.get('Fait') === true // Checkbox returns true or undefined usually
         }));
     } catch (error) {
         console.error("Error fetching tasks:", error);
@@ -695,7 +684,7 @@ export const updateTaskStatus = async (taskId: string, completed: boolean) => {
     if (!apiKey || !baseId) throw new Error("Airtable config missing");
     try {
         await base(TABLES.TODO_LIST).update(taskId, {
-            "Fait": completed ? "Oui" : "Non"
+            "Fait": completed
         });
     } catch (error) {
         console.error("Error updating task:", error);
@@ -810,10 +799,11 @@ export const getStudentRdvs = async (studentId: string): Promise<StudentRdv[]> =
     try {
         // Fetch all RDVs linked to this student
         const records = await base(TABLES.RDV).select({
-            filterByFormula: `SEARCH('${studentId}', {Etudiant})`,
+            // filterByFormula: `SEARCH('${studentId}', {Etudiant})`,
             sort: [{ field: "Date", direction: "desc" }]
         }).all();
 
+        // Check against Linked Record manually to be safe
         // Check against Linked Record manually to be safe
         const studentRecords = records.filter(record => {
             const students = record.get('Etudiant') as string[] | null;
@@ -843,7 +833,7 @@ export const getStudentRdvs = async (studentId: string): Promise<StudentRdv[]> =
                 type: record.get("Type d'entretien") as string || "Rendez-vous",
                 status: record.get("Statut du RDV") as string,
                 lieu: record.get("Lieu") as string || record.get("Lien visio") as string || "À définir",
-                notes: record.get("Commentaires") as string || "Aucune note disponible.",
+                notes: record.get("Résumé de l'entretien") as string || "Aucun compte-rendu disponible.",
                 isPast
             };
         });
@@ -851,5 +841,17 @@ export const getStudentRdvs = async (studentId: string): Promise<StudentRdv[]> =
     } catch (error) {
         console.error("Error fetching student RDVs:", error);
         return [];
+    }
+};
+
+export const updateRdvSummary = async (rdvId: string, summary: string) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+    try {
+        await base(TABLES.RDV).update(rdvId, {
+            "Résumé de l'entretien": summary
+        });
+    } catch (error) {
+        console.error("Error updating RDV summary:", error);
+        throw error;
     }
 };

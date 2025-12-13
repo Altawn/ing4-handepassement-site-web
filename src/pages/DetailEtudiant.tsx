@@ -4,15 +4,9 @@ import { Link, useParams } from 'react-router-dom';
 import HeaderAdmin from '../components/HeaderAdmin';
 import FooterMain from '../components/FooterMain';
 import Oeil from '../components/Oeil';
-import { getStudent, getTasksForStudent, createTask, updateTaskStatus, Task } from '../services/airtable';
+import { getStudent, getTasksForStudent, createTask, updateTaskStatus, Task, getStudentRdvs, StudentRdv, updateRdvSummary } from '../services/airtable';
 
-interface Note {
-    id: number;
-    date: string;
-    duration: string;
-    content: string;
-    createdAt: string;
-}
+
 
 const DetailEtudiant: React.FC = () => {
     const { id } = useParams();
@@ -37,6 +31,12 @@ const DetailEtudiant: React.FC = () => {
     // Tasks
     const [tasks, setTasks] = useState<Task[]>([]);
 
+    // RDVs
+    const [rdvs, setRdvs] = useState<StudentRdv[]>([]);
+    const [selectedRdvId, setSelectedRdvId] = useState('');
+    const [summaryContent, setSummaryContent] = useState('');
+    const [isSubmittingSummary, setIsSubmittingSummary] = useState(false);
+
     useEffect(() => {
         const fetchData = async () => {
             if (!id) return;
@@ -57,6 +57,9 @@ const DetailEtudiant: React.FC = () => {
                 }
                 const fetchedTasks = await getTasksForStudent(id);
                 setTasks(fetchedTasks);
+
+                const fetchedRdvs = await getStudentRdvs(id);
+                setRdvs(fetchedRdvs);
             } catch (error) {
                 console.error("Error loading data", error);
             } finally {
@@ -66,36 +69,12 @@ const DetailEtudiant: React.FC = () => {
         fetchData();
     }, [id]);
 
-    // Notes
-    const [notes, setNotes] = useState<Note[]>([
-        {
-            id: 1,
-            date: '10/03/2024',
-            duration: 'Durée: 45 minutes',
-            content: "Rencontre très productive. Marie a exprimé des difficultés avec ses cours de littérature. Mise en place d'un accompagnement spécifique avec temps de lecture augmenté. Elle se sent plus confiante.",
-            createdAt: 'Créé le 10/03/2024 14:30'
-        },
-        {
-            id: 2,
-            date: '15/02/2024',
-            duration: 'Durée: 30 minutes',
-            content: "Suivi de mi-semestre. Marie progresse bien avec les aménagements mis en place. Elle a réussi à obtenir 14/20 à son dernier partiel. Elle se sent plus confiante.",
-            createdAt: 'Créé le 15/02/2024 10:15'
-        }
-    ]);
-
-    const [newNote, setNewNote] = useState({
-        date: '',
-        duration: '',
-        content: ''
-    });
-
     const [newTask, setNewTask] = useState({
         title: '',
         date: ''
     });
 
-    const handleDeleteTask = (taskId: string) => { // Type updated to string
+    const handleDeleteTask = (taskId: string) => {
         setTasks(tasks.filter(task => task.id !== taskId));
     };
 
@@ -103,11 +82,11 @@ const DetailEtudiant: React.FC = () => {
         if (newTask.title && newTask.date && id) {
             try {
                 await createTask(newTask.title, newTask.date, id);
-                // Refresh tasks with a slight delay to ensure Airtable has updated indices/links if needed
+                // Refresh tasks with a slight delay
                 setTimeout(async () => {
                     const fetchedTasks = await getTasksForStudent(id);
                     setTasks(fetchedTasks);
-                }, 500); // 500ms delay
+                }, 500);
 
                 setNewTask({ title: '', date: '' });
                 setIsNewTaskModalOpen(false);
@@ -117,26 +96,28 @@ const DetailEtudiant: React.FC = () => {
         }
     };
 
-    const handleDeleteNote = (noteId: number) => {
-        setNotes(notes.filter(note => note.id !== noteId));
-    };
+    // Form logic
+    const handleSaveSummary = async () => {
+        if (!selectedRdvId || !summaryContent) return;
 
-    const handleSaveNote = () => {
-        if (newNote.date && newNote.duration && newNote.content) {
-            const now = new Date();
-            const formattedDate = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        setIsSubmittingSummary(true);
+        try {
+            await updateRdvSummary(selectedRdvId, summaryContent);
 
-            const note: Note = {
-                id: notes.length + 1,
-                date: newNote.date,
-                duration: newNote.duration,
-                content: newNote.content,
-                createdAt: `Créé le ${formattedDate}`
-            };
+            // Refresh data
+            if (id) {
+                const fetchedRdvs = await getStudentRdvs(id);
+                setRdvs(fetchedRdvs);
+            }
 
-            setNotes([note, ...notes]);
-            setNewNote({ date: '', duration: '', content: '' });
+            setSummaryContent('');
+            setSelectedRdvId('');
             setActiveTab('historique');
+        } catch (error) {
+            console.error("Failed to save summary", error);
+            alert("Erreur lors de l'enregistrement du compte-rendu.");
+        } finally {
+            setIsSubmittingSummary(false);
         }
     };
 
@@ -257,75 +238,89 @@ const DetailEtudiant: React.FC = () => {
                                 {/* Tab Content */}
                                 {activeTab === 'historique' && (
                                     <div className="space-y-5">
-                                        {notes.map((note) => (
-                                            <div key={note.id} className="border border-gray-200 rounded-xl p-5">
-                                                <div className="flex items-start justify-between mb-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-blue-50 rounded-lg">
-                                                            <Calendar className="w-5 h-5 text-brand" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-bold text-gray-900">{note.date}</p>
-                                                            <p className="text-sm text-gray-500">{note.duration}</p>
+                                        {rdvs.filter(r => r.status === 'Réalisé' || r.isPast).length === 0 ? (
+                                            <p className="text-gray-500 text-center py-4">Aucun rendez-vous passé ou réalisé.</p>
+                                        ) : (
+                                            rdvs.filter(r => r.status === 'Réalisé' || r.isPast).map((rdv) => (
+                                                <div key={rdv.id} className="border border-gray-200 rounded-xl p-5">
+                                                    <div className="flex items-start justify-between mb-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 bg-blue-50 rounded-lg">
+                                                                <Calendar className="w-5 h-5 text-brand" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-bold text-gray-900">{rdv.date}</p>
+                                                                <p className="text-sm text-gray-500">{rdv.type}</p>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        onClick={() => handleDeleteNote(note.id)}
-                                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                    <p className="text-gray-700 leading-relaxed mb-3">
+                                                        <span className="font-semibold block mb-1">Résumé :</span>
+                                                        {rdv.notes}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">Lieu: {rdv.lieu}</p>
                                                 </div>
-                                                <p className="text-gray-700 leading-relaxed mb-3">{note.content}</p>
-                                                <p className="text-xs text-gray-400">{note.createdAt}</p>
-                                            </div>
-                                        ))}
+                                            ))
+                                        )}
                                     </div>
                                 )}
 
                                 {activeTab === 'nouveau' && (
                                     <div className="space-y-5">
+                                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
+                                            <p className="text-sm text-blue-800">
+                                                Sélectionnez un rendez-vous pour ajouter ou modifier son compte-rendu.
+                                            </p>
+                                        </div>
+
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Date du rendez-vous
+                                                Rendez-vous concerné
                                             </label>
-                                            <input
-                                                type="text"
-                                                placeholder="JJ/MM/AAAA"
-                                                value={newNote.date}
-                                                onChange={(e) => setNewNote({ ...newNote, date: e.target.value })}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
-                                            />
+                                            <select
+                                                value={selectedRdvId}
+                                                onChange={(e) => {
+                                                    const rId = e.target.value;
+                                                    setSelectedRdvId(rId);
+                                                    if (rId) {
+                                                        const r = rdvs.find(rd => rd.id === rId);
+                                                        setSummaryContent(r?.notes === "Aucun compte-rendu disponible." ? "" : r?.notes || "");
+                                                    } else {
+                                                        setSummaryContent("");
+                                                    }
+                                                }}
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent bg-white"
+                                            >
+                                                <option value="">Sélectionner un rendez-vous...</option>
+                                                {rdvs.map(r => (
+                                                    <option key={r.id} value={r.id}>
+                                                        {r.date} - {r.type} ({r.status})
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Durée
-                                            </label>
-                                            <input
-                                                type="text"
-                                                placeholder="Ex: 45 minutes, 1 heure..."
-                                                value={newNote.duration}
-                                                onChange={(e) => setNewNote({ ...newNote, duration: e.target.value })}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
-                                            />
-                                        </div>
+
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                                 Compte-rendu du rendez-vous
                                             </label>
                                             <textarea
                                                 rows={6}
-                                                placeholder="Décrivez le déroulement du rendez-vous, les points abordés, les actions à entreprendre..."
-                                                value={newNote.content}
-                                                onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                                                placeholder="Décrivez le déroulement du rendez-vous..."
+                                                value={summaryContent}
+                                                onChange={(e) => setSummaryContent(e.target.value)}
                                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
                                             />
                                         </div>
                                         <button
-                                            onClick={handleSaveNote}
-                                            className="w-full py-3 bg-brand-400 hover:bg-brand text-white font-semibold rounded-lg transition-colors"
+                                            onClick={handleSaveSummary}
+                                            disabled={!selectedRdvId || !summaryContent || isSubmittingSummary}
+                                            className={`w-full py-3 font-semibold rounded-lg transition-colors ${!selectedRdvId || !summaryContent || isSubmittingSummary
+                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                : 'bg-brand hover:bg-brand-400 text-white'
+                                                }`}
                                         >
-                                            Enregistrer la note
+                                            {isSubmittingSummary ? 'Enregistrement...' : 'Enregistrer le compte-rendu'}
                                         </button>
                                     </div>
                                 )}
