@@ -1,17 +1,23 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import logo from '../assets/images/logo-handepassement.png';
 
 const HeaderAdmin: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        localStorage.removeItem('user');
+        navigate('/');
+    };
 
     return (
         <header className="w-[95%] lg:w-[98%] bg-brand rounded-[2rem] lg:rounded-full px-4 lg:px-6 md:mt-4 mb-6 mx-auto lg:mx-4 relative z-50">
             <div className="container mx-auto flex flex-col lg:flex-row items-center justify-between py-4 lg:py-0 gap-4 lg:gap-0">
                 <div className="w-full lg:w-auto flex items-center justify-between">
                     {/* Logo Section */}
-                    <Link to="/" className="flex items-center gap-3 lg:gap-4 group">
+                    <Link to="/admin" className="flex items-center gap-3 lg:gap-4 group">
                         <img
                             src={logo}
                             alt="Handepassement Logo"
@@ -46,12 +52,12 @@ const HeaderAdmin: React.FC = () => {
                         RDV
                     </Link>
 
-                    <Link
-                        to="/"
+                    <button
+                        onClick={handleLogout}
                         className="px-8 py-3 lg:px-6 lg:py-3 xl:px-10 xl:py-4 bg-accent text-brand text-lg lg:text-base xl:text-xl font-bold rounded-full hover:bg-accent-400 transition-colors shadow-sm w-full lg:w-auto text-center"
                     >
                         Déconnexion
-                    </Link>
+                    </button>
                 </nav>
             </div>
         </header>

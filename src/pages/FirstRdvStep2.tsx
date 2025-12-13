@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckCircle, X, MapPin, Video, MessageSquare } from 'lucide-react'; import HeaderMain from '../components/HeaderMain';
 import FooterOther from '../components/FooterOther';
 import { createRdv } from '../services/airtable';
+import { sendRdvConfirmationEmail } from '../services/email';
 
 function FirstRdvStep2() {
     const navigate = useNavigate();
@@ -79,6 +80,7 @@ function FirstRdvStep2() {
     };
 
     const handleConfirm = async () => {
+        console.log("Confirm button clicked", { selectedDate, selectedTime, appointmentType, email });
         if (selectedDate && selectedTime && appointmentType) {
             setIsSubmitting(true);
             setError(null);
@@ -105,10 +107,34 @@ function FirstRdvStep2() {
                     admin: 'Myriam'
                 });
 
+                // Send Confirmation Email
+                // We'll calculate the formatted date again for the email
+                const formattedDate = rdvDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+                await sendRdvConfirmationEmail({
+                    to_email: email,
+                    to_name: "Étudiant", // We could fetch the name but email is enough for now, or "Étudiant"
+                    date: formattedDate,
+                    time: selectedTime,
+                    type: appointmentType === 'presential' ? 'Présentiel' : 'Visio',
+                    location: appointmentType === 'presential' ? 'Bureau Handepassement' : 'Google Meet',
+                    notes: comment
+                });
+
                 setShowConfirmModal(true);
             } catch (err: any) {
                 console.error("Erreur lors de la prise de rendez-vous:", err);
-                setError("Une erreur est survenue lors de la création du rendez-vous. Veuillez réessayer ou contacter l'administration.");
+                // We don't block the UI if email fails but RDV succeeded, but ideally we should distinguish errors.
+                // However, usually if createRdv succeeds, we want to show success modal.
+                // If email fails, it will log to console.
+                if (err.text) {
+                    // EmailJS specific error often has 'text'
+                    console.warn("Email sending failed but RDV created");
+                    // We still show success modal as the main action (RDV) worked
+                    setShowConfirmModal(true);
+                } else {
+                    setError("Une erreur est survenue lors de la création du rendez-vous. Veuillez réessayer ou contacter l'administration.");
+                }
             } finally {
                 setIsSubmitting(false);
             }

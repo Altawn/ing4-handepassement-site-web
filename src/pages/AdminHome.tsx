@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import HeaderAdmin from '../components/HeaderAdmin';
 import FooterMain from '../components/FooterMain';
 import Oeil from '../components/Oeil';
@@ -100,9 +101,9 @@ function AdminHome() {
                             <h2 className="text-lg font-bold text-brand">Rendez-vous à venir</h2>
                             <p className="text-sm text-gray-500">Prochains rendez-vous planifiés</p>
                         </div>
-                        <button className="text-sm font-medium text-brand hover:text-brand-600">
+                        <Link to="/admin/rdv" className="text-sm font-medium text-brand hover:text-brand-600">
                             Voir tout
-                        </button>
+                        </Link>
                     </div>
 
                     <div className="divide-y divide-gray-50">
