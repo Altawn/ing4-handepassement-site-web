@@ -628,7 +628,7 @@ export const getTasksForStudent = async (studentId: string): Promise<Task[]> => 
             id: record.id,
             title: record.get('Description') as string,
             date: record.get('Échéance') as string,
-            completed: record.get('Fait') === true // Checkbox returns true or undefined usually
+            completed: record.get('Fait') === 'Oui' // Map "Oui" string to true boolean
         }));
     } catch (error) {
         console.error("Error fetching tasks:", error);
@@ -640,7 +640,7 @@ export const updateTaskStatus = async (taskId: string, completed: boolean) => {
     if (!apiKey || !baseId) throw new Error("Airtable config missing");
     try {
         await base(TABLES.TODO_LIST).update(taskId, {
-            "Fait": completed
+            "Fait": completed ? "Oui" : "Non"
         });
     } catch (error) {
         console.error("Error updating task:", error);
@@ -690,8 +690,9 @@ export const createTask = async (title: string, date: string, studentId: string)
                     "ID TODO LIST": nextId,
                     "Description": title,
                     "Échéance": formattedDate,
-                    "Fait": false,
+                    "Fait": "Non",
                     "Étudiant": [studentId]
+                    // Removed "Fait": false, as default is unchecked and explicit false can cause 422
                 }
             }
         ]);
