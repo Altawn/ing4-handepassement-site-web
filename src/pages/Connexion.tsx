@@ -21,8 +21,10 @@ function Connexion() {
             const result = await verifyStudent(email, password);
 
             if (result.success) {
-                // Store user info if needed (e.g., in context or local storage)
+                // Store user info in local storage
                 console.log('Login successful:', result.student);
+                localStorage.setItem('user', JSON.stringify(result.student));
+
                 // Check status for redirection
                 const studentData = result.student as any;
                 const status = studentData['Statut'];

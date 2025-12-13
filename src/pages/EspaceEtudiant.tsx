@@ -1,66 +1,66 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock } from 'lucide-react';
 import HeaderClient from '../components/HeaderClient';
 import FooterMain from '../components/FooterMain';
 import Oeil from '../components/Oeil';
+import { getTasksForStudent, updateTaskStatus, Task, getStudentRdvs, StudentRdv } from '../services/airtable';
 
 function EspaceEtudiant() {
+    const navigate = useNavigate();
+    const [user, setUser] = useState<any>(null);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [rdvs, setRdvs] = useState<StudentRdv[]>([]);
+    const [loadingTasks, setLoadingTasks] = useState(true);
 
-    // Sample data
-    const tasks = [
-        {
-            id: 1,
-            title: "Soumettre le certificat médical actualisé",
-            date: "10 Nov 2025",
-            completed: false
-        },
-        {
-            id: 2,
-            title: "Compléter le formulaire d'aménagement pour le semestre 2",
-            date: "15 Nov 2025",
-            completed: false
-        },
-        {
-            id: 3,
-            title: "Préparer les questions pour le prochain rendez-vous",
-            date: "05 Nov 2025",
-            completed: true
-        },
-        {
-            id: 4,
-            title: "Vérifier les horaires des cours adaptés",
-            date: "08 Nov 2025",
-            completed: false
-        }
-    ];
+    useEffect(() => {
+        // Load user from local storage
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
 
-    const pastAppointments = [
-        {
-            id: 1,
-            title: "Premier rendez-vous",
-            date: "28 Oct 2025 14:00",
-            notes: "Étudiant motivé. Besoin d'aménagement pour les examens écrits (tiers-temps). Prochaine étape : mise en place du plan d'accompagnement personnalisé."
-        },
-        {
-            id: 2,
-            title: "Suivi pédagogique - Mi-parcours",
-            date: "15 Oct 2025 10:00",
-            notes: "Bonne progression dans les matières scientifiques. Difficultés persistantes en rédaction. Recommandation : session supplémentaire avec le tuteur de français."
-        },
-        {
-            id: 3,
-            title: "Point administratif",
-            date: "05 Oct 2025 15:00",
-            notes: "Documents administratifs complets. Aménagements validés par la commission. Début de l'accompagnement prévu pour la semaine prochaine."
-        }
-    ];
+            // Load tasks for this student
+            if (parsedUser.id) {
+                // Fetch Tasks
+                getTasksForStudent(parsedUser.id).then(fetchedTasks => {
+                    setTasks(fetchedTasks);
+                    setLoadingTasks(false);
+                });
 
-    const upcomingAppointments = [
-        {
-            id: 1,
-            title: "Rendez-vous avec Myriam",
-            date: "15 Nov 2025 14:00"
+                // Fetch RDVs
+                getStudentRdvs(parsedUser.id).then(fetchedRdvs => {
+                    setRdvs(fetchedRdvs);
+                });
+            }
+        } else {
+            // Redirect to login if not logged in
+            navigate('/connexion');
         }
-    ];
+    }, [navigate]);
+
+    const handleToggleTask = async (taskId: string, currentStatus: boolean) => {
+        // Optimistic update
+        setTasks(tasks.map(t =>
+            t.id === taskId ? { ...t, completed: !currentStatus } : t
+        ));
+
+        try {
+            await updateTaskStatus(taskId, !currentStatus);
+        } catch (error) {
+            console.error("Failed to update task", error);
+            // Revert on error
+            setTasks(tasks.map(t =>
+                t.id === taskId ? { ...t, completed: currentStatus } : t
+            ));
+        }
+    };
+
+
+
+
+    const upcomingAppointments = rdvs.filter(r => !r.isPast).sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
+    const pastAppointments = rdvs.filter(r => r.isPast).sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
 
     return (
         <>
@@ -70,7 +70,7 @@ function EspaceEtudiant() {
                     {/* Welcome Section */}
                     <div className="mb-8">
                         <h1 className="text-3xl font-bold text-gray-900 mb-1">
-                            Bonjour, Marie ! 👋
+                            Bonjour, {user ? user['Nom Complet'].split(' ')[0] : 'Etudiant'} ! 👋
                         </h1>
                         <p className="text-gray-500 font-medium">Espace personnel</p>
                     </div>
@@ -124,8 +124,8 @@ function EspaceEtudiant() {
                                                 <div
                                                     key={i}
                                                     className={`h-10 w-10 mx-auto flex items-center justify-center rounded-full ${isSelected
-                                                            ? 'bg-blue-600 text-white font-bold shadow-md'
-                                                            : 'text-gray-700 hover:bg-gray-50'
+                                                        ? 'bg-blue-600 text-white font-bold shadow-md'
+                                                        : 'text-gray-700 hover:bg-gray-50'
                                                         }`}
                                                 >
                                                     {day}
@@ -144,35 +144,41 @@ function EspaceEtudiant() {
                                 <p className="text-gray-500">Actions à réaliser</p>
                             </div>
                             <div className="space-y-4">
-                                {tasks.map((task) => (
-                                    <div
-                                        key={task.id}
-                                        className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-                                    >
-                                        <div className="pt-1">
-                                            <input
-                                                type="checkbox"
-                                                checked={task.completed}
-                                                className={`w-5 h-5 rounded border-gray-300 ${task.completed ? 'bg-slate-800 text-slate-800' : 'text-slate-800'} focus:ring-slate-800`}
-                                                readOnly
-                                            />
+                                {loadingTasks ? (
+                                    <p className="text-gray-500 text-sm">Chargement des tâches...</p>
+                                ) : tasks.length === 0 ? (
+                                    <p className="text-gray-500 text-sm">Aucune tâche à faire.</p>
+                                ) : (
+                                    tasks.map((task) => (
+                                        <div
+                                            key={task.id}
+                                            className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
+                                        >
+                                            <div className="pt-1">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={task.completed}
+                                                    onChange={() => handleToggleTask(task.id, task.completed)}
+                                                    className={`w-5 h-5 rounded border-gray-300 ${task.completed ? 'bg-slate-800 text-slate-800' : 'text-slate-800'} focus:ring-slate-800`}
+                                                />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p
+                                                    className={`font-semibold text-base ${task.completed
+                                                        ? 'text-gray-400 line-through'
+                                                        : 'text-gray-800'
+                                                        }`}
+                                                >
+                                                    {task.title}
+                                                </p>
+                                                <p className="text-xs text-gray-400 flex items-center gap-1 mt-2 font-medium">
+                                                    <Clock className="w-3 h-3" />
+                                                    {task.date}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="flex-1">
-                                            <p
-                                                className={`font-semibold text-base ${task.completed
-                                                    ? 'text-gray-400 line-through'
-                                                    : 'text-gray-800'
-                                                    }`}
-                                            >
-                                                {task.title}
-                                            </p>
-                                            <p className="text-xs text-gray-400 flex items-center gap-1 mt-2 font-medium">
-                                                <Clock className="w-3 h-3" />
-                                                {task.date}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
@@ -190,7 +196,7 @@ function EspaceEtudiant() {
                                 >
                                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2">
                                         <h3 className="text-lg font-bold text-gray-900">
-                                            {appointment.title}
+                                            {appointment.type}
                                         </h3>
                                         <div className="flex items-center text-gray-500 text-sm font-medium">
                                             <Calendar className="w-4 h-4 mr-2" />
@@ -232,7 +238,7 @@ function EspaceEtudiant() {
                                 >
                                     <div>
                                         <h3 className="text-lg font-bold text-gray-900 mb-2">
-                                            {appointment.title}
+                                            {appointment.type}
                                         </h3>
                                         <p className="text-sm text-gray-500 flex items-center gap-2 font-medium">
                                             <Calendar className="w-4 h-4" />
@@ -247,7 +253,7 @@ function EspaceEtudiant() {
 
                 {/* Accessibility Button */}
                 <Oeil />
-            </div>
+            </div >
             <FooterMain />
         </>
     );

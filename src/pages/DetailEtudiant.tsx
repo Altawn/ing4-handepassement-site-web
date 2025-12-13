@@ -1,16 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Edit, Calendar, Trash2, Plus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import HeaderAdmin from '../components/HeaderAdmin';
 import FooterMain from '../components/FooterMain';
 import Oeil from '../components/Oeil';
-
-interface Task {
-    id: number;
-    title: string;
-    date: string;
-    completed: boolean;
-}
+import { getStudent, getTasksForStudent, createTask, updateTaskStatus, Task } from '../services/airtable';
 
 interface Note {
     id: number;
@@ -21,44 +15,56 @@ interface Note {
 }
 
 const DetailEtudiant: React.FC = () => {
+    const { id } = useParams();
     const [activeTab, setActiveTab] = useState<'historique' | 'nouveau'>('historique');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Sample data - student info
+    // Student info
     const [studentInfo, setStudentInfo] = useState({
-        fullName: 'Marie Dubois',
-        birthDate: '15/05/2002',
-        email: 'marie.dubois@email.com',
-        phone: '06 12 34 56 78',
-        address: '12 rue de la Paix, 75001 Paris',
-        university: 'Université Paris-Sorbonne',
-        filiere: 'Licence de Lettres Modernes',
-        handicapType: 'Dyslexie',
-        inscriptionDate: '15/09/2023'
+        fullName: '',
+        birthDate: '',
+        email: '',
+        phone: '',
+        address: '',
+        university: '',
+        filiere: '',
+        handicapType: '',
+        inscriptionDate: ''
     });
 
     // Tasks
-    const [tasks, setTasks] = useState<Task[]>([
-        {
-            id: 1,
-            title: "Renouveler le certificat MDPH",
-            date: "01/03/2024",
-            completed: false
-        },
-        {
-            id: 2,
-            title: "Faire le point sur les cours du semestre",
-            date: "24 /03/2024",
-            completed: true
-        },
-        {
-            id: 3,
-            title: "Contacter le référent handicap de l'université",
-            date: "09/03/2024",
-            completed: false
-        }
-    ]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!id) return;
+            try {
+                const student = await getStudent(id);
+                if (student) {
+                    setStudentInfo({
+                        fullName: `${student.prenom} ${student.nom}`,
+                        birthDate: "01/01/2000", // Placeholder or fetch if available
+                        email: student.email,
+                        phone: student.phone,
+                        address: "Adresse non renseignée", // Placeholder
+                        university: student.university,
+                        filiere: student.fieldOfStudy + " " + student.studyLevel,
+                        handicapType: student.disabilityTypes.join(', '),
+                        inscriptionDate: "01/09/2023" // Placeholder
+                    });
+                }
+                const fetchedTasks = await getTasksForStudent(id);
+                setTasks(fetchedTasks);
+            } catch (error) {
+                console.error("Error loading data", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, [id]);
 
     // Notes
     const [notes, setNotes] = useState<Note[]>([
@@ -89,21 +95,25 @@ const DetailEtudiant: React.FC = () => {
         date: ''
     });
 
-    const handleDeleteTask = (taskId: number) => {
+    const handleDeleteTask = (taskId: string) => { // Type updated to string
         setTasks(tasks.filter(task => task.id !== taskId));
     };
 
-    const handleAddTask = () => {
-        if (newTask.title && newTask.date) {
-            const task: Task = {
-                id: tasks.length + 1,
-                title: newTask.title,
-                date: newTask.date,
-                completed: false
-            };
-            setTasks([...tasks, task]);
-            setNewTask({ title: '', date: '' });
-            setIsNewTaskModalOpen(false);
+    const handleAddTask = async () => {
+        if (newTask.title && newTask.date && id) {
+            try {
+                await createTask(newTask.title, newTask.date, id);
+                // Refresh tasks with a slight delay to ensure Airtable has updated indices/links if needed
+                setTimeout(async () => {
+                    const fetchedTasks = await getTasksForStudent(id);
+                    setTasks(fetchedTasks);
+                }, 500); // 500ms delay
+
+                setNewTask({ title: '', date: '' });
+                setIsNewTaskModalOpen(false);
+            } catch (error) {
+                console.error("Failed to create task", error);
+            }
         }
     };
 
@@ -366,12 +376,16 @@ const DetailEtudiant: React.FC = () => {
                                                     <input
                                                         type="checkbox"
                                                         checked={task.completed}
-                                                        onChange={() => {
-                                                            setTasks(
-                                                                tasks.map((t) =>
-                                                                    t.id === task.id ? { ...t, completed: !t.completed } : t
-                                                                )
-                                                            );
+                                                        onChange={async () => {
+                                                            // Optimistic
+                                                            const newStatus = !task.completed;
+                                                            setTasks(tasks.map(t => t.id === task.id ? { ...t, completed: newStatus } : t));
+                                                            try {
+                                                                await updateTaskStatus(task.id, newStatus);
+                                                            } catch (e) {
+                                                                // Revert
+                                                                setTasks(tasks.map(t => t.id === task.id ? { ...t, completed: !newStatus } : t));
+                                                            }
                                                         }}
                                                         className="mt-1 w-5 h-5 rounded border-gray-300 text-brand focus:ring-brand"
                                                     />
@@ -570,8 +584,7 @@ const DetailEtudiant: React.FC = () => {
                                         Date d'échéance
                                     </label>
                                     <input
-                                        type="text"
-                                        placeholder="JJ/MM/AAAA"
+                                        type="date"
                                         value={newTask.date}
                                         onChange={(e) => setNewTask({ ...newTask, date: e.target.value })}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"

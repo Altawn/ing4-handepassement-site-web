@@ -14,6 +14,8 @@ const base = new Airtable({ apiKey }).base(baseId || '');
 export const TABLES = {
     ETUDIANT: 'Etudiant',
     RDV: 'RDV',
+    TODO_LIST: 'To Do List',
+    ADMINISTRATEUR: 'Administrateur',
 };
 
 // Interface for Appointment Data
@@ -126,24 +128,56 @@ export const verifyStudent = async (email: string, password: string) => {
             maxRecords: 1
         }).firstPage();
 
-        if (records.length === 0) {
+        if (records.length > 0) {
+            const student = records[0];
+            const storedPassword = student.get('Mot de passe');
+
+            if (storedPassword === password) {
+                return {
+                    success: true,
+                    student: {
+                        id: student.id,
+                        ...student.fields
+                    }
+                };
+            }
+        }
+
+        // 2. If not found in Student or wrong password (though here we check existence first), check Admin
+        // Actually best to check Admin if Student not found.
+
+        const adminRecords = await base(TABLES.ADMINISTRATEUR).select({
+            filterByFormula: `{Adresse mail} = '${email}'`,
+            maxRecords: 1
+        }).firstPage();
+
+        if (adminRecords.length > 0) {
+            const admin = adminRecords[0];
+            if (admin.get('Mot de passe') === password) {
+                return {
+                    success: true,
+                    student: {
+                        id: admin.id,
+                        ...admin.fields,
+                        'Statut': 'Admin', // Force Status for frontend redirection
+                        'Nom Complet': admin.get('Nom complet'), // Normalize field name
+                    }
+                };
+            } else {
+                return { success: false, message: "Mot de passe incorrect" };
+            }
+        }
+
+        if (records.length === 0 && adminRecords.length === 0) {
             return { success: false, message: "Email non trouvé" };
         }
 
-        const student = records[0];
-        const storedPassword = student.get('Mot de passe');
-
-        if (storedPassword === password) {
-            return {
-                success: true,
-                student: {
-                    id: student.id,
-                    ...student.fields
-                }
-            };
-        } else {
+        // If we found student records but password didn't match (logic above was slightly split)
+        if (records.length > 0) {
             return { success: false, message: "Mot de passe incorrect" };
         }
+
+        return { success: false, message: "Erreur inconnue" };
 
     } catch (error: any) {
         console.error("Erreur lors de la connexion:", error);
@@ -501,3 +535,216 @@ export const checkBookingEligibility = async (email: string): Promise<{ allowed:
     }
 };
 
+export interface Task {
+    id: string; // Airtable Record ID
+    title: string;
+    date: string;
+    completed: boolean;
+}
+
+export const getTasksForStudent = async (studentId: string): Promise<Task[]> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        const records = await base(TABLES.TODO_LIST).select({
+            // filterByFormula: `SEARCH('${studentId}', {Etudiant})`, 
+            // Filtering by formula with Record ID on Linked Field is unreliable if it resolves to Name.
+            // We rely on the JS filter below which checks the IDs returned by the API.
+            sort: [{ field: "Échéance", direction: "asc" }]
+        }).all();
+
+        // Warning: filtering by Linked Record ID in formula can be tricky. 
+        // Often `{Field} = 'RecordID'` doesn't work.
+        // `RECORD_ID() = ...` is for the record itself.
+        // For linked record, usually we can pass the name if unique, or use `SEARCH`.
+        // Let's rely on client side filtering if unsure, but it's inefficient.
+        // Actually, if we use `filterByFormula` it expects text.
+        // Let's try `studentId` directly if we can't be sure.
+
+        // Wait, line 326 `createRDV` creates a link using `[studentId]`.
+        // So in Airtable it stores the Record ID.
+        // So we can use `SEARCH` or just fetch records that link to this ID.
+        // Let's allow fetching slightly more and filtering in JS to be safe against formula nuances, 
+        // OR use `filterByFormula` with the student's name if we had it.
+
+        // Re-reading `createRDV`: ` "Etudiant": [studentId]`.
+
+        // Let's try a robust filter:
+        // Or simply `filterByFormula: "FIND('" + studentId + "', {Étudiant}) > 0"`
+
+        return records.filter(record => {
+            const students = record.get('Étudiant') as string[] | null;
+            return students && students.includes(studentId);
+        }).map(record => ({
+            id: record.id,
+            title: record.get('Description') as string,
+            date: record.get('Échéance') as string,
+            completed: record.get('Fait') === true // Checkbox returns true or undefined usually
+        }));
+    } catch (error) {
+        console.error("Error fetching tasks:", error);
+        return [];
+    }
+};
+
+export const updateTaskStatus = async (taskId: string, completed: boolean) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+    try {
+        await base(TABLES.TODO_LIST).update(taskId, {
+            "Fait": completed
+        });
+    } catch (error) {
+        console.error("Error updating task:", error);
+        throw error;
+    }
+};
+
+export const createTask = async (title: string, date: string, studentId: string) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+    try {
+        // Need to handle Date likely. Assuming DD/MM/YYYY or YYYY-MM-DD input? 
+        // Airtable expects YYYY-MM-DD usually.
+        // The input form in DetailEtudiant uses text placeholder "JJ/MM/AAAA".
+        // We might need to convert it.
+        // Let's assume the frontend passes a valid string or we pass it as string if Airtable field is text? 
+        // The screenshot shows "12/11/2025", which looks like a Date field formatted.
+        // `createRDV` does complex date conversion.
+
+        // Let's try to parse the date if it's DD/MM/YYYY
+        let formattedDate = date;
+        if (date.includes('/')) {
+            const parts = date.split('/');
+            if (parts.length === 3) {
+                // DD/MM/YYYY -> YYYY-MM-DD
+                formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+        }
+        // If it comes from input type='date', it's already YYYY-MM-DD, so we leave it as is.
+
+
+        // Get next ID
+        const records = await base(TABLES.TODO_LIST).select({
+            sort: [{ field: "ID TODO LIST", direction: "desc" }],
+            maxRecords: 1,
+            fields: ["ID TODO LIST"]
+        }).firstPage();
+
+        let nextId = 1;
+        if (records.length > 0) {
+            const lastId = records[0].get("ID TODO LIST");
+            nextId = Number(lastId) + 1;
+        }
+
+        await base(TABLES.TODO_LIST).create([
+            {
+                fields: {
+                    "ID TODO LIST": nextId,
+                    "Description": title,
+                    "Échéance": formattedDate,
+                    "Fait": false,
+                    "Étudiant": [studentId]
+                }
+            }
+        ]);
+    } catch (error) {
+        console.error("Error creating task:", error);
+        throw error;
+    }
+};
+
+export const getStudent = async (id: string): Promise<StudentData & { id: string } | null> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+    try {
+        const record = await base(TABLES.ETUDIANT).find(id);
+
+        const handicapIds = (record.get('Handicaps') as string[]) || [];
+        const handicaps = await Promise.all(
+            handicapIds.map(async hId => {
+                try {
+                    const r = await base('Handicaps').find(hId);
+                    return r.get('Nom du Handicap') as string;
+                } catch { return ''; }
+            })
+        );
+
+        return {
+            id: record.id,
+            prenom: (record.get('Nom Complet') as string).split(' ')[0], // Rough approximation
+            nom: (record.get('Nom Complet') as string).split(' ').slice(1).join(' '),
+            email: record.get('Adresse mail') as string,
+            phone: record.get('Telephone') as string,
+            university: record.get('Ecole') as string,
+            fieldOfStudy: record.get('Domaine Etude') as string,
+            studyLevel: record.get('Annee Etude') as string,
+            disabilityTypes: handicaps.filter(h => h),
+            needsDescription: "", // Not in verify table
+            acceptTerms: true,
+            password: ""
+        };
+    } catch (error) {
+        console.error("Error fetching student:", error);
+        return null;
+    }
+};
+
+
+export interface StudentRdv {
+    id: string;
+    date: string; // Formatted date
+    rawDate: string; // ISO string for sorting
+    type: string;
+    status: string;
+    lieu: string;
+    notes: string;
+    isPast: boolean;
+}
+
+export const getStudentRdvs = async (studentId: string): Promise<StudentRdv[]> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        // Fetch all RDVs linked to this student
+        const records = await base(TABLES.RDV).select({
+            filterByFormula: `SEARCH('${studentId}', {Etudiant})`,
+            sort: [{ field: "Date", direction: "desc" }]
+        }).all();
+
+        // Check against Linked Record manually to be safe
+        const studentRecords = records.filter(record => {
+            const students = record.get('Etudiant') as string[] | null;
+            return students && students.includes(studentId);
+        });
+
+        const now = new Date();
+
+        return studentRecords.map(record => {
+            const dateStr = record.get('Date') as string;
+            const rdvDate = new Date(dateStr);
+            const isPast = rdvDate < now;
+
+            const options: Intl.DateTimeFormatOptions = {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            const formattedDate = rdvDate.toLocaleDateString('fr-FR', options);
+
+            return {
+                id: record.id,
+                date: formattedDate,
+                rawDate: dateStr,
+                type: record.get("Type d'entretien") as string || "Rendez-vous",
+                status: record.get("Statut du RDV") as string,
+                lieu: record.get("Lieu") as string || record.get("Lien visio") as string || "À définir",
+                notes: record.get("Commentaires") as string || "Aucune note disponible.",
+                isPast
+            };
+        });
+
+    } catch (error) {
+        console.error("Error fetching student RDVs:", error);
+        return [];
+    }
+};
