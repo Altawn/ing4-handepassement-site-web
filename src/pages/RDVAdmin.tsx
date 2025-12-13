@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getAllAppointments, IncomingRdv } from '../services/airtable';
+import { getAllAppointments, IncomingRdv, updateRdv } from '../services/airtable';
+import { sendRdvUpdateEmail } from '../services/email';
 import { Calendar as CalendarIcon, Clock, Plus, Edit, X, CheckCircle } from 'lucide-react';
 import HeaderAdmin from '../components/HeaderAdmin';
 import FooterMain from '../components/FooterMain';
@@ -22,7 +23,7 @@ const RDVAdmin: React.FC = () => {
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [filterDate, setFilterDate] = useState<Date | null>(null);
-    const [appointmentToEdit, setAppointmentToEdit] = useState<Appointment | null>(null);
+    const [appointmentToEdit, setAppointmentToEdit] = useState<IncomingRdv | null>(null);
 
 
     const [appointments, setAppointments] = useState<IncomingRdv[]>([]);
@@ -80,7 +81,8 @@ const RDVAdmin: React.FC = () => {
         student: '',
         type: '',
         date: '',
-        time: ''
+        time: '',
+        status: ''
     });
 
     const [confirmedAppointment, setConfirmedAppointment] = useState({
@@ -90,8 +92,70 @@ const RDVAdmin: React.FC = () => {
 
     // Mock handlers to satisfy lints
     const handleCreateAppointment = () => { console.log('Create not implemented'); setIsNewAppointmentModalOpen(false); };
-    const handleEditAppointment = () => { console.log('Edit not implemented'); setIsEditAppointmentModalOpen(false); };
-    const openEditModal = (apt: any) => { console.log('Edit modal not implemented', apt); };
+
+    const handleEditAppointment = async () => {
+        if (!appointmentToEdit) return;
+
+        try {
+            let newDate: Date | undefined = undefined;
+            if (editAppointment.date && editAppointment.time) {
+                newDate = new Date(`${editAppointment.date}T${editAppointment.time}`);
+            }
+
+            const updatedFields = {
+                type: editAppointment.type as any,
+                date: newDate,
+                status: editAppointment.status as any
+            };
+
+            const updatedData = await updateRdv(appointmentToEdit.id, updatedFields);
+
+            // Check if status changed and send email
+            if (appointmentToEdit.status !== editAppointment.status) {
+                console.log(`Status changed for appointment ${appointmentToEdit.id}. Sending email...`);
+
+                const rdvDate = newDate || new Date(appointmentToEdit.date);
+                const formattedDate = rdvDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                const formattedTime = rdvDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                await sendRdvUpdateEmail({
+                    to_email: updatedData.studentEmail,
+                    to_name: updatedData.studentName,
+                    date: formattedDate,
+                    time: formattedTime,
+                    type: editAppointment.type,
+                    location: "Voir détails",
+                    new_status: editAppointment.status,
+                    notes: "Le statut de votre rendez-vous a été mis à jour."
+                });
+            }
+
+            setIsEditAppointmentModalOpen(false);
+            setAppointmentToEdit(null);
+
+            // Refresh appointments list
+            const data = await getAllAppointments();
+            setAppointments(data);
+
+        } catch (error) {
+            console.error("Failed to update appointment", error);
+            alert("Erreur lors de la mise à jour du rendez-vous.");
+        }
+    };
+
+    const openEditModal = (apt: IncomingRdv) => {
+        setAppointmentToEdit(apt);
+        const dateObj = new Date(apt.date);
+        const timeString = dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false });
+        setEditAppointment({
+            student: apt.studentName,
+            type: apt.type,
+            date: dateObj.toISOString().split('T')[0],
+            time: timeString,
+            status: apt.status
+        });
+        setIsEditAppointmentModalOpen(true);
+    };
 
     // Simple calendar component
     const renderCalendar = () => {
@@ -141,7 +205,7 @@ const RDVAdmin: React.FC = () => {
                             isToday ? 'bg-blue-100 text-brand font-bold' :
                                 'hover:bg-gray-100 text-gray-700'
                         }
-                    `}
+`}
                 >
                     {day}
                     {hasAppointment && !isSelected && (
@@ -191,8 +255,8 @@ const RDVAdmin: React.FC = () => {
 
     return (
         <>
-            <HeaderAdmin />
             <div className="min-h-screen bg-gray-50 py-8 px-6">
+                <HeaderAdmin />
                 <div className="container mx-auto max-w-7xl">
                     {/* Header */}
                     <div className="mb-8 flex items-center justify-between">
@@ -230,7 +294,7 @@ const RDVAdmin: React.FC = () => {
                                         className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'upcoming'
                                             ? 'text-brand border-b-2 border-brand'
                                             : 'text-gray-500 hover:text-gray-700'
-                                            }`}
+                                            } `}
                                     >
                                         À venir ({upcomingCount})
                                     </button>
@@ -239,7 +303,7 @@ const RDVAdmin: React.FC = () => {
                                         className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'past'
                                             ? 'text-brand border-b-2 border-brand'
                                             : 'text-gray-500 hover:text-gray-700'
-                                            }`}
+                                            } `}
                                     >
                                         Passées ({pastCount})
                                     </button>
@@ -260,9 +324,10 @@ const RDVAdmin: React.FC = () => {
                                                         <div className="flex items-center justify-between mb-2">
                                                             <h3 className="text-lg font-bold text-gray-900">{apt.studentName}</h3>
                                                             <span
-                                                                className={`px-3 py-1 rounded-full text-xs font-semibold ${apt.status === 'confirmé'
-                                                                    ? 'bg-green-100 text-green-700'
-                                                                    : 'bg-yellow-100 text-yellow-700'
+                                                                className={`px-3 py-1 rounded-full text-xs font-semibold ${['Validé', 'Confirmé', 'Réalisé'].includes(apt.status) ? 'bg-green-100 text-green-700' :
+                                                                    ['Annulé', 'Refusé'].includes(apt.status) ? 'bg-red-100 text-red-700' :
+                                                                        ['Reporté'].includes(apt.status) ? 'bg-orange-100 text-orange-700' :
+                                                                            'bg-yellow-100 text-yellow-700'
                                                                     }`}
                                                             >
                                                                 {apt.status}
@@ -283,19 +348,12 @@ const RDVAdmin: React.FC = () => {
                                                 </div>
                                                 <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
                                                     <button
-                                                        onClick={() => { }} // openEditModal(apt) - disabled for now
+                                                        onClick={() => openEditModal(apt)}
                                                         className="inline-flex items-center gap-1 text-gray-700 hover:text-brand font-medium text-sm transition-colors"
                                                     >
                                                         <Edit className="w-4 h-4" />
                                                         Modifier
                                                     </button>
-                                                    {/*  <button
-                                                        onClick={() => handleCancelAppointment(apt.id)}
-                                                        className="inline-flex items-center gap-1 text-red-500 hover:text-red-600 font-medium text-sm transition-colors"
-                                                    >
-                                                        <X className="w-4 h-4" />
-                                                        Annuler
-                                                    </button> */}
                                                 </div>
                                             </div>
                                         ))}
@@ -447,7 +505,8 @@ const RDVAdmin: React.FC = () => {
                                         student: '',
                                         type: '',
                                         date: '',
-                                        time: ''
+                                        time: '',
+                                        status: ''
                                     });
                                 }}
                                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -508,6 +567,22 @@ const RDVAdmin: React.FC = () => {
                                             className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
                                         />
                                     </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            Statut
+                                        </label>
+                                        <select
+                                            value={editAppointment.status}
+                                            onChange={(e) => setEditAppointment({ ...editAppointment, status: e.target.value })}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                                        >
+                                            <option value="Attente de Validation">Attente de Validation</option>
+                                            <option value="Prévu">Prévu</option>
+                                            <option value="Réalisé">Réalisé</option>
+                                            <option value="Annulé">Annulé</option>
+                                            <option value="Reporté">Reporté</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -520,7 +595,8 @@ const RDVAdmin: React.FC = () => {
                                             student: '',
                                             type: '',
                                             date: '',
-                                            time: ''
+                                            time: '',
+                                            status: ''
                                         });
                                     }}
                                     className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
@@ -531,7 +607,7 @@ const RDVAdmin: React.FC = () => {
                                     onClick={handleEditAppointment}
                                     className="flex-1 py-3 bg-brand hover:bg-brand-400 text-white font-semibold rounded-lg transition-colors"
                                 >
-                                    Enregistrer les modifications
+                                    Enregistrer
                                 </button>
                             </div>
                         </div>

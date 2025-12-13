@@ -83,6 +83,7 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
     - [ ] connecté ces résumés à l'étudiant en question dans son espace 
     - [ ] enlever le bouton "nouveau rendez-vous" dans l'espace admin (si elle veut un rdv soit on met ca dans la to do list de l'étudiant - en mode prend un rdv avec moi, soit on envoie un mail)
     - [ ] rajouter une page ou un endroit pour que myriam puisse remplir ses dispo - comment on gere ca dans la bdd????
+    - [ ] réalisé et validé ??? 
 
 
 - [ ] **Connexion**
@@ -103,6 +104,9 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
 
 - [ ] **Automatisation**
     - [ ] Envoi de mail automatique pour la prise de RDV
+
+- [ ] **Général**
+    - [ ] Quand appui du bouton Handépassement alors qu'on est ceonnecté -> déconnexion (on veut être redirigé vers la page accueil client ou admin quand on clique sur handépassement et qu'on est connecté)
 
 ---
 *Projet réalisé dans le cadre de l'ING4.*

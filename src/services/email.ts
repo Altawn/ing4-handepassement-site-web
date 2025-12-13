@@ -65,3 +65,39 @@ export const sendRdvConfirmationEmail = async (params: EmailParams) => {
         throw err;
     }
 };
+
+// New function for status updates
+export const sendRdvUpdateEmail = async (params: EmailParams & { new_status: string }) => {
+    const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+    const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    // We reuse the main template or use a specific one if defined
+    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_UPDATE_TEMPLATE_ID || import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+
+    if (!PUBLIC_KEY || !SERVICE_ID || !TEMPLATE_ID) {
+        console.warn("Email configuration missing for updates.");
+        return;
+    }
+
+    try {
+        const response = await emailjs.send(
+            SERVICE_ID,
+            TEMPLATE_ID,
+            {
+                to_email: params.to_email,
+                to_name: params.to_name || "Étudiant",
+                rdv_date: params.date,
+                rdv_time: params.time,
+                rdv_type: params.type,
+                rdv_location: params.location,
+                rdv_status: params.new_status, // New variable for template
+                rdv_notes: params.notes || "Le statut de votre rendez-vous a changé.",
+                reply_to: "associationhandepassement@gmail.com",
+                message_type: "UPDATE"
+            },
+            PUBLIC_KEY
+        );
+        console.log('UPDATE EMAIL SENT!', response.status, response.text);
+    } catch (err) {
+        console.error('FAILED to send update email:', err);
+    }
+};

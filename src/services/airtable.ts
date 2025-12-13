@@ -424,6 +424,50 @@ export const createRdv = async (data: RdvData) => {
     }
 };
 
+export const updateRdv = async (rdvId: string, data: Partial<RdvData>) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        const fields: any = {};
+        if (data.date) {
+            const offset = data.date.getTimezoneOffset() * 60000;
+            const localDate = new Date(data.date.getTime() - offset);
+            fields["Date"] = localDate.toISOString().replace('Z', '');
+        }
+        if (data.type) fields["Type d'entretien"] = data.type;
+        if (data.status) fields["Statut du RDV"] = data.status;
+        if (data.lieu !== undefined) fields["Lieu"] = data.lieu;
+        if (data.lienVisio !== undefined) fields["Lien visio"] = data.lienVisio;
+        if (data.commentaires !== undefined) fields["Commentaires"] = data.commentaires;
+        if (data.admin) fields["Administrateur"] = data.admin;
+
+        await base(TABLES.RDV).update(rdvId, fields, { typecast: true });
+
+        // Fetch updated record and student info for email notification
+        const record = await base(TABLES.RDV).find(rdvId);
+        const studentIds = (record.get('Etudiant') as string[]) || [];
+        let studentEmail = "";
+        let studentName = "";
+
+        if (studentIds.length > 0) {
+            const student = await base(TABLES.ETUDIANT).find(studentIds[0]);
+            studentEmail = student.get('Adresse mail') as string;
+            studentName = student.get('Nom Complet') as string;
+        }
+
+        return {
+            id: record.id,
+            fields: record.fields,
+            studentEmail,
+            studentName
+        };
+
+    } catch (error: any) {
+        console.error("Error updating RDV:", error);
+        throw error;
+    }
+};
+
 export const getDashboardStats = async () => {
     if (!apiKey || !baseId) throw new Error("Airtable config missing");
 
@@ -570,6 +614,17 @@ export const checkBookingEligibility = async (email: string): Promise<{ allowed:
 
         const hasActive = rdvs.some(rdv => {
             const rdvStatus = rdv.get('Statut du RDV') as string;
+            const rdvDateStr = rdv.get('Date') as string;
+
+            // If date is passed, we allow booking another one (it's not "active" for blocking purposes)
+            if (rdvDateStr) {
+                const rdvDate = new Date(rdvDateStr);
+                const now = new Date();
+                if (rdvDate < now) {
+                    return false;
+                }
+            }
+
             return rdvStatus !== 'Annulé' && rdvStatus !== 'Reporté';
         });
 
