@@ -12,6 +12,7 @@ import PriseRDVClient from './pages/PriseRDVClient'
 import Documentation from './pages/Documentation'
 import DocumentationAdmin from './pages/DocumentationAdmin'
 import RDVAdmin from './pages/RDVAdmin'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
     return (
@@ -22,14 +23,50 @@ function App() {
                 <Route path="/premier-rdv/selection" element={<FirstRdvStep2 />} />
                 <Route path="/connexion" element={<Connexion />} />
                 <Route path="/inscription" element={<Inscription />} />
-                <Route path="/mon-espace" element={<EspaceEtudiant />} />
-                <Route path="/admin" element={<AdminHome />} />
-                <Route path="/admin/gestion-etudiants" element={<StudentManagement />} />
-                <Route path="/admin/etudiant/:id" element={<DetailEtudiant />} />
-                <Route path="/admin/documentation" element={<DocumentationAdmin />} />
-                <Route path="/admin/rdv" element={<RDVAdmin />} />
-                <Route path="/prise-rdv" element={<PriseRDVClient />} />
-                <Route path="/documentation" element={<Documentation />} />
+
+                {/* Espace Étudiant */}
+                <Route path="/mon-espace" element={
+                    <ProtectedRoute allowedRoles={['Etudiant']}>
+                        <EspaceEtudiant />
+                    </ProtectedRoute>
+                } />
+                <Route path="/prise-rdv" element={
+                    <ProtectedRoute allowedRoles={['Etudiant']}>
+                        <PriseRDVClient />
+                    </ProtectedRoute>
+                } />
+                <Route path="/documentation" element={
+                    <ProtectedRoute allowedRoles={['Etudiant']}>
+                        <Documentation />
+                    </ProtectedRoute>
+                } />
+
+                {/* Espace Admin */}
+                <Route path="/admin" element={
+                    <ProtectedRoute allowedRoles={['Admin']}>
+                        <AdminHome />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/gestion-etudiants" element={
+                    <ProtectedRoute allowedRoles={['Admin']}>
+                        <StudentManagement />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/etudiant/:id" element={
+                    <ProtectedRoute allowedRoles={['Admin']}>
+                        <DetailEtudiant />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/documentation" element={
+                    <ProtectedRoute allowedRoles={['Admin']}>
+                        <DocumentationAdmin />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/rdv" element={
+                    <ProtectedRoute allowedRoles={['Admin']}>
+                        <RDVAdmin />
+                    </ProtectedRoute>
+                } />
             </Routes>
         </Router>
     )

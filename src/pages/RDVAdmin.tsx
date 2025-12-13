@@ -268,13 +268,6 @@ const RDVAdmin: React.FC = () => {
                                 Planifier et gérer tous les rendez-vous
                             </p>
                         </div>
-                        <button
-                            onClick={() => setIsNewAppointmentModalOpen(true)}
-                            className="flex items-center gap-2 px-6 py-3 bg-brand text-white font-semibold rounded-lg hover:bg-brand-400 transition-colors"
-                        >
-                            <Plus className="w-5 h-5" />
-                            Nouveau rendez-vous
-                        </button>
                     </div>
 
                     {/* Main Grid */}
