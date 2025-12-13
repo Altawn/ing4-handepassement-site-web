@@ -672,7 +672,7 @@ export const getTasksForStudent = async (studentId: string): Promise<Task[]> => 
             id: record.id,
             title: record.get('Description') as string,
             date: record.get('Échéance') as string,
-            completed: record.get('Fait') === true // Checkbox returns true or undefined usually
+            completed: record.get('Fait') === "Oui" // Check text value "Oui"
         }));
     } catch (error) {
         console.error("Error fetching tasks:", error);
@@ -684,7 +684,7 @@ export const updateTaskStatus = async (taskId: string, completed: boolean) => {
     if (!apiKey || !baseId) throw new Error("Airtable config missing");
     try {
         await base(TABLES.TODO_LIST).update(taskId, {
-            "Fait": completed
+            "Fait": completed ? "Oui" : "Non"
         });
     } catch (error) {
         console.error("Error updating task:", error);
