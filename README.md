@@ -58,22 +58,48 @@ Pour lancer le projet localement sur votre machine :
 
 Cette section liste les tâches restantes et les améliorations à apporter au projet.
 
-- [ ] **Inscription**
+-- [ ] **Inscription**
     - [ ] Rendre les champs obligatoires.
     - [ ] Ajouter champ aidant familial
     - [ ] En mode Tritanopie, la page inscription est floutée 
-    - [ ] Modal et oeil bloqué en mode Tritanopie et les autres 
+    - [ ] Modal et oeil bloqué en mode Tritanopie et les autres
+    - [ ] Protéger les mdp dans la bdd (admin devrait pas pouvoir les voir je pense)
+
 
 - [ ] **Prise de rendez-vous**
     - [ ] Ajouter selon choix présentiel ou visio un lien visio ou localisation pour rdv (demander a Myriam)
+    - [ ] générer un lien google meet pour visio
+
 
 - [ ] **BDD**
-    - [ ] Gérer statut étudiant "en attente" après premier RDV - voir comment coté admin
-    - [ ] Verif si l'étudiant est déjà dans la base en tant que "Etudiant" avant d'autoriser l'inscription
+    - [ ] Gérer statut étudiant "en attente" après premier RDV
+    - [ ] Verif si l'étudiant est déjà dans la base en tant que "Etudiant" avant d'autoriser l'inscription (pas en attente) 
+    - [ ] rajouter champs disponibilités dans table admin (ou creer un table en plus connecté a l'admin)
+
+
+- [ ] **RDV**
+    - [ ] connecter prise de rdv depuis page de connexion de l'étudiant
+    - [ ] creer le champs de remplissage du résumé du rdv dans admin
+    - [ ] connecté ces résumés à l'étudiant en question dans son espace 
+    - [ ] enlever le bouton "nouveau rendez-vous" dans l'espace admin (si elle veut un rdv soit on met ca dans la to do list de l'étudiant - en mode prend un rdv avec moi, soit on envoie un mail)
+    - [ ] rajouter une page ou un endroit pour que myriam puisse remplir ses dispo - comment on gere ca dans la bdd????
+
 
 - [ ] **Connexion**
     - [x] Footer qui est en haut de la page
     - [ ] Régler le fait que si on tape "/admin" dans l'adresse, on est redirigé vers la page admin sans même s'être connecté (Faire une protection sur les pages nécessitant une connexion)
+
+
+- [ ] **Admin**
+    - [ ] rajouter bouton pour valider un etudiant - le faire passer de "en attente" à "etudiant"
+    - [ ] detail de l'étudiant à lié avec l'étudiant sur lequel on clique, afficher ses infos (avec airtable)
+
+
+- [ ] **Documentation**
+    - [ ] creer la table documentation dans airtable
+    - [ ] lier l'accès à la documentation à l'admin avec ajout et modification 
+    - [ ] afficher la documentation dans l'espace etudiant
+
 
 - [ ] **Automatisation**
     - [ ] Envoi de mail automatique pour la prise de RDV
