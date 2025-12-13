@@ -38,8 +38,9 @@ export interface StudentData {
     university: string;
     fieldOfStudy: string;
     studyLevel: string;
-    disabilityTypes: string[]; // Changed to array
+    disabilityTypes: string[];
     needsDescription: string;
+    aidantFamilial?: boolean; // New field
     acceptTerms: boolean;
     password: string;
 }
@@ -54,9 +55,6 @@ const STUDY_LEVEL_MAP: Record<string, string> = {
     'Autre': 'Autre'
 };
 
-// No longer needed for mapping if we send the values directly, 
-// but kept if we need to map specific UI labels to Airtable names.
-// Since the UI options match the Airtable names (based on user request), we can use them directly.
 const DISABILITY_TYPE_MAP: Record<string, string> = {
     'TDAH': 'TDAH',
     'Autisme': 'Autisme',
@@ -67,53 +65,99 @@ const DISABILITY_TYPE_MAP: Record<string, string> = {
     'Autre': 'Autre'
 };
 
+export const updateStudentStatus = async (studentId: string, status: string) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+    try {
+        await base(TABLES.ETUDIANT).update(studentId, {
+            "Statut": status
+        });
+    } catch (error) {
+        console.error("Error updating student status:", error);
+        throw error;
+    }
+};
+
 export const createStudent = async (data: StudentData) => {
     if (!apiKey || !baseId) {
         throw new Error("Configuration Airtable manquante");
     }
 
     try {
+        // Check availability strictly for registration
+        const eligibility = await checkBookingEligibility(data.email);
+        if (!eligibility.allowed && eligibility.reason === 'ACCOUNT_EXISTS') {
+            throw new Error("ACCOUNT_EXISTS");
+        }
+        // If RDV_EXISTS (meaning En attente + rdv), we probably shouldn't block registration? 
+        // Actually Inscription is usually creating the account password. 
+        // If "En attente", they have no password yet (created via RDV flow).
+        // So we should Update the existing "En attente" record instead of creating new!
+
+        let existingId = null;
+        const existingRecords = await base(TABLES.ETUDIANT).select({
+            filterByFormula: `{Adresse mail} = '${data.email}'`,
+            maxRecords: 1
+        }).firstPage();
+
+        if (existingRecords.length > 0) {
+            const rec = existingRecords[0];
+            if (rec.get('Statut') === 'Étudiant') {
+                throw new Error("ACCOUNT_EXISTS");
+            }
+            // If En attente, we update it
+            existingId = rec.id;
+        }
+
         // Prepare values
         const studyLevel = STUDY_LEVEL_MAP[data.studyLevel] || data.studyLevel;
-
-        // Map selected disabilities if needed, or use directly
         const disabilities = data.disabilityTypes.map(d => DISABILITY_TYPE_MAP[d] || d);
 
-        // Mapping form data to Airtable columns
-        const records = await base(TABLES.ETUDIANT).create([
-            {
+        const hashedPassword = await hashPassword(data.password);
+
+        const fields = {
+            "Nom Complet": `${data.prenom} ${data.nom}`,
+            "Adresse mail": data.email,
+            "Telephone": data.phone,
+            "Statut": "Étudiant", // We promote them to Etudiant now
+            "Ecole": data.university,
+            "Domaine Etude": data.fieldOfStudy,
+            "Annee Etude": studyLevel,
+            "Mot de passe": hashedPassword,
+            "Handicaps": disabilities,
+            "Aidant familial": data.aidantFamilial ? true : false, // Map to checkbox
+            // Preserve existing links if updating
+        };
+
+        if (existingId) {
+            const records = await base(TABLES.ETUDIANT).update([{
+                id: existingId,
+                fields: fields
+            }], { typecast: true });
+            return records;
+        } else {
+            const records = await base(TABLES.ETUDIANT).create([{
                 fields: {
-                    "Nom Complet": `${data.prenom} ${data.nom}`,
-                    "Adresse mail": data.email,
-                    "Telephone": data.phone,
-                    "Statut": "Étudiant",
-                    "Ecole": data.university,
-                    "Domaine Etude": data.fieldOfStudy,
-
-                    "Annee Etude": studyLevel,
-
-                    "Mot de passe": data.password,
-
-                    // Send array of strings. 
-                    // CRITICAL: typecast: true allows Airtable to link to records by name
-                    "Handicaps": disabilities,
-
+                    ...fields,
                     "To Do List": [],
                     "RDV": []
                 }
-            }
-        ], { typecast: true }); // Enable typecast for Linked Records
+            }], { typecast: true });
+            return records;
+        }
 
-        return records;
     } catch (error: any) {
-        // Improved error logging
-        console.error("Erreur Airtable détaillée:", {
-            message: error.message,
-            error: error.error,
-            statusCode: error.statusCode
-        });
+        console.error("Erreur Airtable détaillée:", error);
         throw error;
     }
+};
+
+// Helper for hashing
+const hashPassword = async (password: string): Promise<string> => {
+    const msgBuffer = new TextEncoder().encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
 };
 
 export const verifyStudent = async (email: string, password: string) => {
@@ -128,11 +172,14 @@ export const verifyStudent = async (email: string, password: string) => {
             maxRecords: 1
         }).firstPage();
 
+        const hashedPassword = await hashPassword(password);
+
         if (records.length > 0) {
             const student = records[0];
             const storedPassword = student.get('Mot de passe');
 
-            if (storedPassword === password) {
+            // Support both Hashed (new) and Plain (old) passwords for migration
+            if (storedPassword === hashedPassword || storedPassword === password) {
                 return {
                     success: true,
                     student: {
@@ -143,9 +190,6 @@ export const verifyStudent = async (email: string, password: string) => {
             }
         }
 
-        // 2. If not found in Student or wrong password (though here we check existence first), check Admin
-        // Actually best to check Admin if Student not found.
-
         const adminRecords = await base(TABLES.ADMINISTRATEUR).select({
             filterByFormula: `{Adresse mail} = '${email}'`,
             maxRecords: 1
@@ -153,7 +197,9 @@ export const verifyStudent = async (email: string, password: string) => {
 
         if (adminRecords.length > 0) {
             const admin = adminRecords[0];
-            if (admin.get('Mot de passe') === password) {
+            const storedAdminPass = admin.get('Mot de passe');
+            // Admin passwords might be plain text initially or hashed. Supporting both.
+            if (storedAdminPass === hashedPassword || storedAdminPass === password) {
                 return {
                     success: true,
                     student: {
@@ -172,7 +218,7 @@ export const verifyStudent = async (email: string, password: string) => {
             return { success: false, message: "Email non trouvé" };
         }
 
-        // If we found student records but password didn't match (logic above was slightly split)
+        // If we found student records but password didn't match
         if (records.length > 0) {
             return { success: false, message: "Mot de passe incorrect" };
         }
@@ -209,7 +255,7 @@ export const getAllStudents = async () => {
 
     try {
         const records = await base(TABLES.ETUDIANT).select({
-            filterByFormula: "{Statut} = 'Étudiant'",
+            // Removed filter to get all statuses (Etudiant, En attente, etc.)
             sort: [{ field: "Nom Complet", direction: "asc" }]
         }).all();
 
@@ -221,8 +267,10 @@ export const getAllStudents = async () => {
                 // Récupération des noms réels des handicaps
                 const handicaps = await Promise.all(
                     handicapIds.map(async id => {
-                        const r = await base('Handicaps').find(id);
-                        return r.get('Nom du Handicap') as string;
+                        try {
+                            const r = await base('Handicaps').find(id);
+                            return r.get('Nom du Handicap') as string;
+                        } catch { return ''; }
                     })
                 );
 
@@ -232,13 +280,14 @@ export const getAllStudents = async () => {
                     email: record.get('Adresse mail') as string,
                     phone: record.get('Telephone') as string,
                     handicaps,
+                    statut: record.get('Statut') as string || 'Inconnu', // Add status
                     inscription: "",
                     dernierRdv: ""
                 };
             })
         );
 
-        return students; // <-- ici c’est bien Student[]
+        return students;
     } catch (error) {
         console.error("Erreur lors de la récupération des étudiants:", error);
         return [];

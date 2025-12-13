@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import HeaderAdmin from '../components/HeaderAdmin';
 import FooterMain from '../components/FooterMain';
-import { getAllStudents } from '../services/airtable';
-import { Eye, Search, Mail, Phone } from 'lucide-react';
+import { getAllStudents, updateStudentStatus } from '../services/airtable';
+import { Eye, Search, Mail, Phone, CheckCircle, Loader2 } from 'lucide-react';
 
 interface Student {
     id: string;
@@ -11,6 +11,7 @@ interface Student {
     email: string;
     phone: string;
     handicaps: string[];
+    statut: string; // Added status
     inscription: string;
     dernierRdv: string;
 }
@@ -19,6 +20,7 @@ function StudentManagement() {
     const [students, setStudents] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [processingId, setProcessingId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchStudents = async () => {
@@ -35,10 +37,34 @@ function StudentManagement() {
         fetchStudents();
     }, []);
 
+    const handleValidate = async (studentId: string) => {
+        if (!confirm("Voulez-vous vraiment valider cet étudiant ? Cela lui donnera le statut 'Étudiant'.")) return;
+
+        setProcessingId(studentId);
+        try {
+            await updateStudentStatus(studentId, 'Étudiant');
+            // Update local state
+            setStudents(prev => prev.map(s => s.id === studentId ? { ...s, statut: 'Étudiant' } : s));
+        } catch (err) {
+            console.error(err);
+            alert("Erreur lors de la validation");
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
     const filteredStudents = students.filter(student =>
         student.nomComplet.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Étudiant': return 'bg-green-100 text-green-800';
+            case 'En attente': return 'bg-orange-100 text-orange-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -80,22 +106,21 @@ function StudentManagement() {
                                 <tr>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Nom</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Contact</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Statut</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Type de handicap</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Inscription</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Dernier RDV</th>
-                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-900 uppercase tracking-wider"></th>
+                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-900 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                                             Chargement des étudiants...
                                         </td>
                                     </tr>
                                 ) : filteredStudents.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                                             Aucun étudiant trouvé
                                         </td>
                                     </tr>
@@ -117,6 +142,11 @@ function StudentManagement() {
                                                     </div>
                                                 </div>
                                             </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(student.statut)}`}>
+                                                    {student.statut}
+                                                </span>
+                                            </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-wrap gap-2">
                                                     {student.handicaps.map((handicap, index) => (
@@ -129,20 +159,29 @@ function StudentManagement() {
                                                     ))}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {/* Empty as requested */}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {/* Empty as requested */}
-                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <Link
-                                                    to={`/admin/etudiant/${student.id}`}
-                                                    className="text-gray-400 hover:text-brand transition-colors flex items-center justify-end gap-2 ml-auto"
-                                                >
-                                                    <Eye className="w-5 h-5" />
-                                                    <span>Détail</span>
-                                                </Link>
+                                                <div className="flex justify-end items-center gap-3">
+                                                    {student.statut === 'En attente' && (
+                                                        <button
+                                                            onClick={() => handleValidate(student.id)}
+                                                            className="text-orange-500 hover:text-green-600 transition-colors p-1"
+                                                            title="Valider l'étudiant"
+                                                            disabled={processingId === student.id}
+                                                        >
+                                                            {processingId === student.id ? (
+                                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                            ) : (
+                                                                <CheckCircle className="w-5 h-5" />
+                                                            )}
+                                                        </button>
+                                                    )}
+                                                    <Link
+                                                        to={`/admin/etudiant/${student.id}`}
+                                                        className="text-gray-400 hover:text-brand transition-colors flex items-center gap-1"
+                                                    >
+                                                        <Eye className="w-5 h-5" />
+                                                    </Link>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))

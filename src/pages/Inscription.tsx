@@ -21,6 +21,7 @@ export default function Inscription() {
         studyLevel: '',
         disabilityTypes: [] as string[], // Changed to array
         needsDescription: '',
+        aidantFamilial: false,
         acceptTerms: false
     });
 
@@ -54,9 +55,13 @@ export default function Inscription() {
         try {
             await createStudent(formData);
             nextStep(); // Go to success step
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            setError("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
+            if (err.message === "ACCOUNT_EXISTS") {
+                setError("Un compte existe déjà pour cette adresse email. Veuillez vous connecter.");
+            } else {
+                setError("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
+            }
         } finally {
             setIsLoading(false);
         }
@@ -142,6 +147,20 @@ export default function Inscription() {
                                     onChange={handleChange}
                                     placeholder="06 12 34 56 78"
                                 />
+                            </div>
+
+                            <div className="mb-3 flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    name="aidantFamilial"
+                                    id="aidantFamilial"
+                                    className="w-4 h-4 text-brand border-neutral-300 rounded focus:ring-brand-400"
+                                    checked={formData.aidantFamilial}
+                                    onChange={handleCheckboxChange}
+                                />
+                                <label htmlFor="aidantFamilial" className="text-xs font-medium text-neutral-700 cursor-pointer">
+                                    Je suis un aidant familial
+                                </label>
                             </div>
 
                             <div className="mb-3 relative">
