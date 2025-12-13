@@ -84,10 +84,12 @@ export const createStudent = async (data: StudentData) => {
 
     try {
         // Check availability strictly for registration
-        const eligibility = await checkBookingEligibility(data.email);
-        if (!eligibility.allowed && eligibility.reason === 'ACCOUNT_EXISTS') {
-            throw new Error("ACCOUNT_EXISTS");
-        }
+        // const eligibility = await checkBookingEligibility(data.email);
+        // We bypass this check to allow Account Claiming (updating existing records)
+        // irrespective of their current status (Etudiant, En Attente) or RDVs.
+
+        // Actually, let's just comment out the block that prevents registration if account exists
+        // as we want to support account claiming.
         // If RDV_EXISTS (meaning En attente + rdv), we probably shouldn't block registration? 
         // Actually Inscription is usually creating the account password. 
         // If "En attente", they have no password yet (created via RDV flow).
@@ -101,10 +103,11 @@ export const createStudent = async (data: StudentData) => {
 
         if (existingRecords.length > 0) {
             const rec = existingRecords[0];
-            if (rec.get('Statut') === 'Étudiant') {
-                throw new Error("ACCOUNT_EXISTS");
-            }
-            // If En attente, we update it
+            // Allow updating even if Statut is 'Étudiant' (Account Claiming / Password Reset via Registration)
+            // if (rec.get('Statut') === 'Étudiant') {
+            //     throw new Error("ACCOUNT_EXISTS");
+            // }
+            // If En attente OR Étudiant, we update it
             existingId = rec.id;
         }
 
@@ -124,7 +127,7 @@ export const createStudent = async (data: StudentData) => {
             "Annee Etude": studyLevel,
             "Mot de passe": hashedPassword,
             "Handicaps": disabilities,
-            "Aidant familial": data.aidantFamilial ? true : false, // Map to checkbox
+            "Aidant familial": data.aidantFamilial ? "Oui" : "Non", // Map to Oui/Non because boolean failed
             // Preserve existing links if updating
         };
 
