@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckCircle, X, MapPin, Video, MessageSquare } from 'lucide-react'; import HeaderMain from '../components/HeaderMain';
 import FooterOther from '../components/FooterOther';
 import { createRdv } from '../services/airtable';
-import HeaderInscription from '../components/HeaderInscription';
 
 function FirstRdvStep2() {
     const navigate = useNavigate();

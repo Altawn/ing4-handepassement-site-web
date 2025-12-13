@@ -75,5 +75,8 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
     - [x] Footer qui est en haut de la page
     - [ ] Régler le fait que si on tape "/admin" dans l'adresse, on est redirigé vers la page admin sans même s'être connecté (Faire une protection sur les pages nécessitant une connexion)
 
+- [ ] **Automatisation**
+    - [ ] Envoi de mail automatique pour la prise de RDV
+
 ---
 *Projet réalisé dans le cadre de l'ING4.*

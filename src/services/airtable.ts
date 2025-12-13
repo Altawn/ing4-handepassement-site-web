@@ -454,3 +454,50 @@ export const getAllAppointments = async (): Promise<IncomingRdv[]> => {
         return [];
     }
 };
+
+
+export const checkBookingEligibility = async (email: string): Promise<{ allowed: boolean; reason?: 'ACCOUNT_EXISTS' | 'RDV_EXISTS' }> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        // 1. Find Student by Email
+        const records = await base(TABLES.ETUDIANT).select({
+            filterByFormula: `{Adresse mail} = '${email}'`,
+            maxRecords: 1
+        }).firstPage();
+
+        if (records.length === 0) return { allowed: true };
+
+        const student = records[0];
+        const status = student.get('Statut') as string;
+
+        // 2. Check Account Status
+        if (status === 'Étudiant') {
+            return { allowed: false, reason: 'ACCOUNT_EXISTS' };
+        }
+
+        // 3. Check RDV table for this student
+        const rdvIds = (student.get('RDV') as string[]) || [];
+
+        if (rdvIds.length === 0) return { allowed: true };
+
+        // 4. Check status of all RDVs
+        const rdvPromises = rdvIds.map(id => base(TABLES.RDV).find(id));
+        const rdvs = await Promise.all(rdvPromises);
+
+        const hasActive = rdvs.some(rdv => {
+            const rdvStatus = rdv.get('Statut du RDV') as string;
+            return rdvStatus !== 'Annulé' && rdvStatus !== 'Reporté';
+        });
+
+        if (hasActive) {
+            return { allowed: false, reason: 'RDV_EXISTS' };
+        }
+
+        return { allowed: true };
+    } catch (error) {
+        console.error("Error checking checkBookingEligibility:", error);
+        throw error;
+    }
+};
+
