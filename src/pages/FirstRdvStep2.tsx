@@ -80,6 +80,7 @@ function FirstRdvStep2() {
     };
 
     const handleConfirm = async () => {
+        console.log("Confirm button clicked", { selectedDate, selectedTime, appointmentType, email });
         if (selectedDate && selectedTime && appointmentType) {
             setIsSubmitting(true);
             setError(null);
