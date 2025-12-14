@@ -16,6 +16,7 @@ export const TABLES = {
     RDV: 'RDV',
     TODO_LIST: 'To Do List',
     ADMINISTRATEUR: 'Administrateur',
+    DOCUMENTATION: 'documentation',
 };
 
 // Interface for Appointment Data
@@ -858,3 +859,108 @@ export const updateRdvSummary = async (rdvId: string, summary: string) => {
         throw error;
     }
 };
+
+export interface DocumentationData {
+    id: string;
+    titre: string;
+    description: string;
+    contenu: string;
+    lien: string;
+    sharedWithIds: string[];
+    adminName: string;
+}
+
+export const getDocumentation = async (studentId?: string): Promise<DocumentationData[]> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        const records = await base(TABLES.DOCUMENTATION).select({
+            sort: [{ field: "Titre", direction: "asc" }]
+        }).all();
+
+        if (records.length > 0) {
+            console.log("--------------- DEBUG AIRTABLE FIELDS ---------------");
+            console.log("Available Fields from first record:", Object.keys(records[0].fields));
+            console.log("-----------------------------------------------------");
+        }
+
+        const docs = records.map(record => {
+            const studentIds = (record.get('Etudiant') as string[]) || [];
+            const adminRaw = record.get('Administrateur');
+            let adminName = "Admin";
+            if (typeof adminRaw === 'string') {
+                adminName = adminRaw;
+            } else if (Array.isArray(adminRaw) && adminRaw.length > 0) {
+                // Linked record case, simplistic handling
+                adminName = "Admin";
+            }
+
+            return {
+                id: record.id,
+                titre: record.get('Titre') as string,
+                description: record.get('description') as string,
+                contenu: record.get('Contenue') as string,
+                lien: record.get('lien') as string,
+                sharedWithIds: studentIds,
+                adminName: adminName // We might want to resolve this if it's an ID
+            };
+        });
+
+        if (studentId) {
+            // Filter for student: Public (no students linked) OR Explicitly shared
+            return docs.filter(doc =>
+                doc.sharedWithIds.length === 0 || doc.sharedWithIds.includes(studentId)
+            );
+        }
+
+        return docs; // Admin sees all
+    } catch (error) {
+        console.error("Error fetching documentation:", error);
+        return [];
+    }
+};
+
+export const createDocumentation = async (data: Omit<DocumentationData, 'id' | 'adminName'> & { adminName: string }) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        const fields: any = {
+            "Titre": data.titre,
+            "description": data.description || "",
+            "Contenue": data.contenu || "",
+        };
+
+        // Only add link if it's not empty, otherwise it might fail validation if it's a URL field
+        if (data.lien && data.lien.trim() !== "") {
+            fields["lien"] = data.lien;
+        }
+
+        // Only add Etudiant if we have IDs, otherwise leave empty
+        if (data.sharedWithIds && data.sharedWithIds.length > 0) {
+            fields["Etudiant"] = data.sharedWithIds;
+        }
+
+        // fields["Administrateur"] = ... // Still skipping admin to be safe
+
+        console.log("Creating documentation with fields:", fields);
+
+        await base(TABLES.DOCUMENTATION).create([{
+            fields: fields
+        }], { typecast: true });
+
+    } catch (error: any) {
+        console.error("Error creating documentation:", JSON.stringify(error, null, 2));
+        throw error;
+    }
+};
+
+export const deleteDocumentation = async (id: string) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+    try {
+        await base(TABLES.DOCUMENTATION).destroy(id);
+    } catch (error) {
+        console.error("Error deleting documentation:", error);
+        throw error;
+    }
+};
+

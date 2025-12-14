@@ -1,472 +1,351 @@
-import React, { useState } from 'react';
-import { FileText, Plus, ExternalLink, Search, Edit, Trash2, CheckCircle } from 'lucide-react';
+
+import { useState, useEffect } from 'react';
 import HeaderAdmin from '../components/HeaderAdmin';
 import FooterMain from '../components/FooterMain';
 import Oeil from '../components/Oeil';
+import {
+    getDocumentation,
+    createDocumentation,
+    deleteDocumentation,
+    getAllStudents,
+    DocumentationData
+} from '../services/airtable';
+import { Trash2, Plus, ExternalLink, Check, Search, X } from 'lucide-react';
 
-interface Documentation {
-    id: number;
-    title: string;
-    description: string;
-    link: string;
-    lastModified: string;
-}
+function DocumentationAdmin() {
+    const [docs, setDocs] = useState<DocumentationData[]>([]);
+    const [students, setStudents] = useState<any[]>([]); // Using any for student structure based on service
+    const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
-const DocumentationAdmin: React.FC = () => {
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
-    const [documentToEdit, setDocumentToEdit] = useState<Documentation | null>(null);
-
-    const [documents, setDocuments] = useState<Documentation[]>([
-        {
-            id: 1,
-            title: "Guide pour accompagner la dyslexie dans l'enseignement",
-            description: "Ressources et stratégies pédagogiques",
-            link: "https://example.com/dyslexie",
-            lastModified: "2024-03-10"
-        },
-        {
-            id: 2,
-            title: "Aménagements pour le TDAH et ses aménagements",
-            description: "Techniques et outils pratiques",
-            link: "https://example.com/tdah",
-            lastModified: "2024-03-10"
-        },
-        {
-            id: 3,
-            title: "Accompagnement des étudiants autistes",
-            description: "Adaptation et inclusion",
-            link: "https://example.com/autisme",
-            lastModified: "2024-03-10"
-        }
-    ]);
-
-    const [newDocument, setNewDocument] = useState({
-        title: '',
+    // Form State
+    const [newDoc, setNewDoc] = useState({
+        titre: '',
         description: '',
-        link: ''
+        contenu: '',
+        lien: '',
+        sharedWithIds: [] as string[],
+        shareMode: 'all' as 'all' | 'select'
     });
 
-    const [editDocument, setEditDocument] = useState({
-        title: '',
-        description: '',
-        link: ''
-    });
+    useEffect(() => {
+        fetchData();
+    }, []);
 
-    const handleAddDocument = () => {
-        if (newDocument.title && newDocument.description && newDocument.link) {
-            const doc: Documentation = {
-                id: documents.length + 1,
-                title: newDocument.title,
-                description: newDocument.description,
-                link: newDocument.link,
-                lastModified: new Date().toISOString().split('T')[0]
-            };
-            setDocuments([...documents, doc]);
-            setNewDocument({ title: '', description: '', link: '' });
-            setIsAddModalOpen(false);
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [fetchedDocs, fetchedStudents] = await Promise.all([
+                getDocumentation(), // Fetch all docs for admin
+                getAllStudents()
+            ]);
+            setDocs(fetchedDocs);
+            setStudents(fetchedStudents);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleEditDocument = () => {
-        if (documentToEdit && editDocument.title && editDocument.description && editDocument.link) {
-            const updatedDocuments = documents.map(doc =>
-                doc.id === documentToEdit.id
-                    ? {
-                        ...doc,
-                        title: editDocument.title,
-                        description: editDocument.description,
-                        link: editDocument.link,
-                        lastModified: new Date().toISOString().split('T')[0]
-                    }
-                    : doc
-            );
-            setDocuments(updatedDocuments);
-            setIsEditModalOpen(false);
-            setDocumentToEdit(null);
-            setEditDocument({ title: '', description: '', link: '' });
+    const handleDelete = async (id: string) => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer ce document ?")) {
+            try {
+                await deleteDocumentation(id);
+                setDocs(docs.filter(d => d.id !== id));
+            } catch (error) {
+                alert("Erreur lors de la suppression");
+            }
         }
     };
 
-    const handleDeleteDocument = () => {
-        if (documentToDelete !== null) {
-            setDocuments(documents.filter(doc => doc.id !== documentToDelete));
-            setIsDeleteModalOpen(false);
-            setIsSuccessModalOpen(true);
-            setDocumentToDelete(null);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const sharedIds = newDoc.shareMode === 'all' ? [] : newDoc.sharedWithIds;
+
+            await createDocumentation({
+                titre: newDoc.titre,
+                description: newDoc.description,
+                contenu: newDoc.contenu,
+                lien: newDoc.lien,
+                sharedWithIds: sharedIds,
+                adminName: "Admin" // Simple default, could be dynamic
+            });
+
+            setIsModalOpen(false);
+            setNewDoc({
+                titre: '',
+                description: '',
+                contenu: '',
+                lien: '',
+                sharedWithIds: [],
+                shareMode: 'all'
+            });
+            fetchData(); // Refresh list
+        } catch (error: any) {
+            console.error("Create detailed error:", error);
+            const msg = error?.error || error?.message || JSON.stringify(error);
+            alert("Erreur lors de la création: " + msg);
         }
     };
 
-    const openDeleteModal = (id: number) => {
-        setDocumentToDelete(id);
-        setIsDeleteModalOpen(true);
-    };
-
-    const openEditModal = (doc: Documentation) => {
-        setDocumentToEdit(doc);
-        setEditDocument({
-            title: doc.title,
-            description: doc.description,
-            link: doc.link
+    const toggleStudentSelection = (studentId: string) => {
+        setNewDoc(prev => {
+            const exists = prev.sharedWithIds.includes(studentId);
+            if (exists) {
+                return { ...prev, sharedWithIds: prev.sharedWithIds.filter(id => id !== studentId) };
+            } else {
+                return { ...prev, sharedWithIds: [...prev.sharedWithIds, studentId] };
+            }
         });
-        setIsEditModalOpen(true);
     };
 
-    const filteredDocuments = documents.filter(doc =>
-        doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.description.toLowerCase().includes(searchTerm.toLowerCase())
+
+
+    const filteredStudents = students.filter(s =>
+        s.nomComplet.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
-        <>
+        <div className="min-h-screen bg-gray-50 flex flex-col">
             <HeaderAdmin />
-            <div className="min-h-screen bg-gray-50 py-8 px-6">
-                <div className="container mx-auto max-w-7xl">
-                    {/* Header */}
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            Gestion de la documentation
-                        </h1>
-                        <p className="text-gray-500">
-                            Gérer les ressources et informations sur les différents types de handicaps
-                        </p>
-                    </div>
 
-                    {/* Stats Card */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-50 rounded-lg">
-                                <FileText className="w-6 h-6 text-brand" />
-                            </div>
-                            <div>
-                                <p className="text-3xl font-bold text-gray-900">{documents.length}</p>
-                                <p className="text-sm text-gray-500">Ressources documentaires</p>
-                            </div>
-                        </div>
+            <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Gestion de la Documentation</h1>
+                        <p className="text-gray-500 mt-1">Gérez les ressources partagées avec les étudiants</p>
+                    </div>
+                    <div className="flex gap-3">
+
                         <button
-                            onClick={() => setIsAddModalOpen(true)}
-                            className="flex items-center gap-2 px-6 py-3 bg-brand text-white font-semibold rounded-lg hover:bg-brand-400 transition-colors"
+                            onClick={() => setIsModalOpen(true)}
+                            className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-sm"
                         >
                             <Plus className="w-5 h-5" />
-                            Ajouter une documentation
+                            Ajouter
                         </button>
                     </div>
+                </div>
 
-                    {/* Documents List */}
-                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                        <div className="p-6 border-b border-gray-200">
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <h2 className="text-xl font-bold text-gray-900">Liste des documentations</h2>
-                                    <p className="text-sm text-gray-500">Gérer les ressources disponibles pour les étudiants</p>
-                                </div>
-                            </div>
-
-                            {/* Search Bar */}
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <input
-                                    type="text"
-                                    placeholder="Rechercher"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full md:w-64 pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Table */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-gray-50">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 border-b border-gray-100">
+                                <tr>
+                                    <th className="px-6 py-4 font-semibold text-gray-700 text-sm">Titre</th>
+                                    <th className="px-6 py-4 font-semibold text-gray-700 text-sm">Description</th>
+                                    <th className="px-6 py-4 font-semibold text-gray-700 text-sm">Visibilité</th>
+                                    <th className="px-6 py-4 font-semibold text-gray-700 text-sm">Lien</th>
+                                    <th className="px-6 py-4 font-semibold text-gray-700 text-sm text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {loading ? (
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                                            Lien
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                                            Dernière modification
-                                        </th>
-                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                                            Actions
-                                        </th>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Chargement...</td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {filteredDocuments.map((doc) => (
+                                ) : docs.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Aucun document trouvé.</td>
+                                    </tr>
+                                ) : (
+                                    docs.map((doc) => (
                                         <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 font-medium text-gray-900">{doc.titre}</td>
+                                            <td className="px-6 py-4 text-gray-500 max-w-xs truncate">{doc.description}</td>
                                             <td className="px-6 py-4">
-                                                <div className="mb-1">
-                                                    <p className="font-medium text-gray-900">{doc.title}</p>
-                                                    <p className="text-sm text-gray-500">{doc.description}</p>
-                                                </div>
-                                                <a
-                                                    href={doc.link}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-1 text-brand hover:text-brand-400 text-sm font-medium transition-colors"
+                                                {doc.sharedWithIds.length === 0 ? (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        Tout le monde
+                                                    </span>
+                                                ) : (
+                                                    <div className="flex flex-col gap-1">
+                                                        {doc.sharedWithIds.map(id => {
+                                                            const student = students.find(s => s.id === id);
+                                                            return (
+                                                                <span key={id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 w-fit">
+                                                                    {student ? student.nomComplet : 'Etudiant inconnu'}
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {doc.lien && (
+                                                    <a href={doc.lien} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                                                        <ExternalLink className="w-4 h-4" />
+                                                    </a>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    onClick={() => handleDelete(doc.id)}
+                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Supprimer"
                                                 >
-                                                    <ExternalLink className="w-4 h-4" />
-                                                    Voir le lien
-                                                </a>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500">
-                                                {doc.lastModified}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center justify-end gap-3">
-                                                    <button
-                                                        onClick={() => openEditModal(doc)}
-                                                        className="inline-flex items-center gap-1 text-brand hover:text-brand-400 font-medium text-sm transition-colors"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                        Modifier
-                                                    </button>
-                                                    <button
-                                                        onClick={() => openDeleteModal(doc.id)}
-                                                        className="inline-flex items-center gap-1 text-red-500 hover:text-red-600 font-medium text-sm transition-colors"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                        Supprimer
-                                                    </button>
-                                                </div>
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
+            </main>
 
-                {/* Accessibility Button */}
-                <Oeil />
-            </div>
-
-            {/* Add Document Modal */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-                        <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between rounded-t-2xl">
-                            <div>
-                                <h2 className="text-2xl font-bold text-gray-900">Ajouter un document</h2>
-                                <p className="text-sm text-gray-500 mt-1">Ajouter un nouveau document sur le site</p>
-                            </div>
-                            <button
-                                onClick={() => setIsAddModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                                <Plus className="w-6 h-6 rotate-45" />
+            {/* Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl flex flex-col">
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-900">Nouveau Document</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
 
-                        <div className="p-8">
-                            <div className="space-y-5">
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Titre
-                                    </label>
+                        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    value={newDoc.titre}
+                                    onChange={e => setNewDoc({ ...newDoc, titre: e.target.value })}
+                                    placeholder="Ex: TDAH - Comprendre les symptômes"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Description (Courte)</label>
+                                <textarea
+                                    rows={2}
+                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    value={newDoc.description}
+                                    onChange={e => setNewDoc({ ...newDoc, description: e.target.value })}
+                                    placeholder="Une brève description pour l'aperçu..."
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Contenu (Détaillé)</label>
+                                <textarea
+                                    rows={6}
+                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    value={newDoc.contenu}
+                                    onChange={e => setNewDoc({ ...newDoc, contenu: e.target.value })}
+                                    placeholder="Le contenu complet du document..."
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Lien externe</label>
+                                <div className="relative">
+                                    <ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
                                         type="text"
-                                        placeholder="Sélectionner un titre"
-                                        value={newDocument.title}
-                                        onChange={(e) => setNewDocument({ ...newDocument, title: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Description
-                                    </label>
-                                    <textarea
-                                        rows={3}
-                                        placeholder="Courte Description..."
-                                        value={newDocument.description}
-                                        onChange={(e) => setNewDocument({ ...newDocument, description: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Lien du document
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="PDF, Notion, Google Docs..."
-                                        value={newDocument.link}
-                                        onChange={(e) => setNewDocument({ ...newDocument, link: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                                        className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        value={newDoc.lien}
+                                        onChange={e => setNewDoc({ ...newDoc, lien: e.target.value })}
+                                        placeholder="https://..."
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 mt-6">
+                            <div className="pt-4 border-t border-gray-100">
+                                <label className="block text-sm font-medium text-gray-700 mb-3">Partager avec</label>
+
+                                <div className="flex gap-4 mb-4">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="shareMode"
+                                            checked={newDoc.shareMode === 'all'}
+                                            onChange={() => setNewDoc({ ...newDoc, shareMode: 'all' })}
+                                            className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span className="text-gray-700">Tous les étudiants</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="shareMode"
+                                            checked={newDoc.shareMode === 'select'}
+                                            onChange={() => setNewDoc({ ...newDoc, shareMode: 'select' })}
+                                            className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span className="text-gray-700">Sélectionner des étudiants</span>
+                                    </label>
+                                </div>
+
+                                {newDoc.shareMode === 'select' && (
+                                    <div className="border border-gray-200 rounded-xl overflow-hidden">
+                                        <div className="p-3 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+                                            <Search className="w-4 h-4 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Rechercher un étudiant..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                className="bg-transparent border-none focus:outline-none text-sm w-full"
+                                            />
+                                        </div>
+                                        <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+                                            {filteredStudents.length === 0 ? (
+                                                <p className="text-sm text-gray-400 text-center py-2">Aucun étudiant trouvé.</p>
+                                            ) : (
+                                                filteredStudents.map(student => (
+                                                    <label key={student.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${newDoc.sharedWithIds.includes(student.id) ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'
+                                                            }`}>
+                                                            {newDoc.sharedWithIds.includes(student.id) && <Check className="w-3 h-3 text-white" />}
+                                                        </div>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="hidden"
+                                                            checked={newDoc.sharedWithIds.includes(student.id)}
+                                                            onChange={() => toggleStudentSelection(student.id)}
+                                                        />
+                                                        <span className="text-sm text-gray-700">{student.nomComplet}</span>
+                                                    </label>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="pt-6 flex justify-end gap-3">
                                 <button
-                                    onClick={() => {
-                                        setNewDocument({ title: '', description: '', link: '' });
-                                        setIsAddModalOpen(false);
-                                    }}
-                                    className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors"
                                 >
                                     Annuler
                                 </button>
                                 <button
-                                    onClick={handleAddDocument}
-                                    className="flex-1 py-3 bg-brand hover:bg-brand-400 text-white font-semibold rounded-lg transition-colors"
+                                    type="submit"
+                                    className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
                                 >
-                                    Ajouter le document
+                                    Créer le document
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             )}
 
-            {/* Edit Document Modal */}
-            {isEditModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-                        <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between rounded-t-2xl">
-                            <div>
-                                <h2 className="text-2xl font-bold text-gray-900">Modifier le document</h2>
-                                <p className="text-sm text-gray-500 mt-1">Mettre à jour les informations du document</p>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setIsEditModalOpen(false);
-                                    setDocumentToEdit(null);
-                                    setEditDocument({ title: '', description: '', link: '' });
-                                }}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                                <Plus className="w-6 h-6 rotate-45" />
-                            </button>
-                        </div>
-
-                        <div className="p-8">
-                            <div className="space-y-5">
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Titre
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="Sélectionner un titre"
-                                        value={editDocument.title}
-                                        onChange={(e) => setEditDocument({ ...editDocument, title: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Description
-                                    </label>
-                                    <textarea
-                                        rows={3}
-                                        placeholder="Courte Description..."
-                                        value={editDocument.description}
-                                        onChange={(e) => setEditDocument({ ...editDocument, description: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Lien du document
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="PDF, Notion, Google Docs..."
-                                        value={editDocument.link}
-                                        onChange={(e) => setEditDocument({ ...editDocument, link: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 mt-6">
-                                <button
-                                    onClick={() => {
-                                        setIsEditModalOpen(false);
-                                        setDocumentToEdit(null);
-                                        setEditDocument({ title: '', description: '', link: '' });
-                                    }}
-                                    className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    onClick={handleEditDocument}
-                                    className="flex-1 py-3 bg-brand hover:bg-brand-400 text-white font-semibold rounded-lg transition-colors"
-                                >
-                                    Enregistrer les modifications
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                            Supprimer la documentation
-                        </h2>
-                        <p className="text-gray-600 mb-6">
-                            Êtes-vous sûr de vouloir supprimer cette documentation ? Cette action est irréversible et la ressource ne sera plus accessible aux étudiants.
-                        </p>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    setIsDeleteModalOpen(false);
-                                    setDocumentToDelete(null);
-                                }}
-                                className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                Non, garder
-                            </button>
-                            <button
-                                onClick={handleDeleteDocument}
-                                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition-colors"
-                            >
-                                Oui, supprimer
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Success Modal */}
-            {isSuccessModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <CheckCircle className="w-10 h-10 text-green-500" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                            Documentation supprimée avec succès
-                        </h2>
-                        <p className="text-gray-600 mb-6">
-                            La documentation a été supprimée avec succès.
-                        </p>
-                        <button
-                            onClick={() => setIsSuccessModalOpen(false)}
-                            className="w-full py-3 bg-brand hover:bg-brand-400 text-white font-semibold rounded-lg transition-colors"
-                        >
-                            Fermer
-                        </button>
-                    </div>
-                </div>
-            )}
-
+            <Oeil />
             <FooterMain />
-        </>
+        </div>
     );
-};
+}
 
 export default DocumentationAdmin;

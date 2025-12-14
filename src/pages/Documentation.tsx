@@ -1,161 +1,148 @@
-import React, { useState } from 'react';
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import HeaderClient from '../components/HeaderClient';
 import FooterMain from '../components/FooterMain';
 import Oeil from '../components/Oeil';
-import { Search, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { getDocumentation, DocumentationData } from '../services/airtable';
+import { FileText, ExternalLink, X, Calendar } from 'lucide-react';
 
-interface DocSection {
-    id: string;
-    title: string;
-    subtitle: string;
-    content: string;
-}
+function Documentation() {
+    const navigate = useNavigate();
+    const [docs, setDocs] = useState<DocumentationData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedDoc, setSelectedDoc] = useState<DocumentationData | null>(null);
 
-const Documentation: React.FC = () => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [expandedSection, setExpandedSection] = useState<string | null>(null);
-
-    const docSections: DocSection[] = [
-        {
-            id: 'dyslexie',
-            title: 'Dyslexie',
-            subtitle: 'Comprendre et accompagner la dyslexie',
-            content: "La dyslexie est un trouble spécifique de l'apprentissage de la lecture. Les aménagements possibles incluent : temps majoré pour les examens (tiers-temps), utilisation de logiciels de synthèse vocale, polices adaptées (comme OpenDyslexic), et supports de cours numérisés."
-        },
-        {
-            id: 'tdah',
-            title: 'TDAH (Trouble Déficit de l\'Attention avec Hyperactivité)',
-            subtitle: 'Informations sur le TDAH et ses aménagements',
-            content: "Le TDAH se caractérise par des difficultés d'attention, d'impulsivité et parfois d'hyperactivité. Aménagements : pauses régulières pendant les examens, salle d'examen isolée ou en petit groupe, autorisation de bouger, consignes scindées et claires."
-        },
-        {
-            id: 'tsa',
-            title: 'Troubles du Spectre Autistique (TSA)',
-            subtitle: 'Accompagnement des étudiants autistes',
-            content: "Les étudiants avec TSA peuvent avoir des besoins spécifiques en communication et interaction sociale. Aménagements : emploi du temps stable, tuteur pédagogique, consignes explicites, environnement calme, possibilité de s'isoler."
-        },
-        {
-            id: 'phobie',
-            title: 'Phobie Scolaire',
-            subtitle: 'Soutien pour la phobie scolaire et l\'anxiété',
-            content: "L'anxiété scolaire peut nécessiter une reprise progressive des cours, un accompagnement psychologique, des aménagements pour les oraux (passer seul avec l'enseignant), et un accès aux cours à distance si nécessaire."
-        },
-        {
-            id: 'dyscalculie',
-            title: 'Dyscalculie',
-            subtitle: 'Soutien pour les troubles du calcul',
-            content: "La dyscalculie affecte les compétences numériques. Aménagements : utilisation de la calculatrice, tables de multiplication et formulaires autorisés, temps supplémentaire, exercices aérés."
-        },
-        {
-            id: 'moteur',
-            title: 'Handicap Moteur',
-            subtitle: 'Accessibilité et aménagements physiques',
-            content: "L'accessibilité physique est primordiale. Aménagements : ascenseurs, rampes d'accès, mobilier adapté (tables réglables), assistance humaine pour la prise de notes ou les déplacements, temps de déplacement inter-cours aménagé."
-        }
-    ];
-
-    const toggleSection = (id: string) => {
-        if (expandedSection === id) {
-            setExpandedSection(null);
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            // If Student, pass ID to filter.
+            // If the user role is 'Etudiant', we pass the ID.
+            if (parsedUser.id) {
+                getDocumentation(parsedUser.id).then(data => {
+                    setDocs(data);
+                    setLoading(false);
+                });
+            }
         } else {
-            setExpandedSection(id);
+            navigate('/connexion');
         }
-    };
-
-    const filteredSections = docSections.filter(section =>
-        section.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        section.subtitle.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    }, [navigate]);
 
     return (
-        <div className="min-h-screen bg-white font-sans flex flex-col">
+        <>
             <HeaderClient />
+            <div className="min-h-screen bg-gray-50 py-12 px-6">
+                <div className="container mx-auto max-w-7xl">
+                    <div className="mb-10">
+                        <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Documentation</h1>
+                        <p className="text-gray-500 text-lg">Ressources et guides mis à votre disposition.</p>
+                    </div>
 
-            <main className="flex-grow container mx-auto px-4 lg:px-8 py-8 max-w-5xl">
-                <div className="mb-8">
-                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Documentation</h1>
-                    <p className="text-gray-500 text-lg">Informations sur les différents types de handicaps et les aménagements disponibles</p>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-3xl p-6 lg:p-8 shadow-sm mb-12 relative overflow-hidden">
-                    {/* Search Bar */}
-                    <div className="flex justify-end mb-8">
-                        <div className="relative w-full max-w-xs">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-5 w-5 text-gray-400" />
-                            </div>
-                            <input
-                                type="text"
-                                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-1 focus:ring-brand focus:border-brand sm:text-sm transition duration-150 ease-in-out"
-                                placeholder="Rechercher"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                    {loading ? (
+                        <div className="text-center py-20">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                            <p className="mt-4 text-gray-500">Chargement des documents...</p>
                         </div>
-                    </div>
-
-                    {/* Info Header */}
-                    <div className="flex items-center gap-2 text-brand mb-6">
-                        <FileText className="h-5 w-5" />
-                        <span className="font-medium">Cliquez sur chaque section pour en savoir plus</span>
-                    </div>
-
-                    {/* Accordion List */}
-                    <div className="space-y-4">
-                        {filteredSections.map((section) => (
-                            <div key={section.id} className="border-b border-gray-100 last:border-0">
-                                <button
-                                    onClick={() => toggleSection(section.id)}
-                                    className="w-full text-left py-4 flex items-center justify-between focus:outline-none group"
+                    ) : docs.length === 0 ? (
+                        <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+                            <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold text-gray-900">Aucune documentation disponible</h3>
+                            <p className="text-gray-500 mt-2">Vous n'avez accès à aucun document pour le moment.</p>
+                        </div>
+                    ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {docs.map((doc) => (
+                                <div
+                                    key={doc.id}
+                                    className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col cursor-pointer group"
+                                    onClick={() => setSelectedDoc(doc)}
                                 >
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-brand transition-colors">
-                                            {section.title}
+                                    <div className="p-8 flex-1">
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                <FileText className="w-6 h-6" />
+                                            </div>
+                                            {doc.lien && <ExternalLink className="w-5 h-5 text-gray-300" />}
+                                        </div>
+                                        <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                            {doc.titre}
                                         </h3>
-                                        <p className="text-gray-500 text-sm mt-1">
-                                            {section.subtitle}
+                                        <p className="text-gray-500 leading-relaxed line-clamp-3">
+                                            {doc.description}
                                         </p>
                                     </div>
-                                    <div className="ml-4 flex-shrink-0 text-gray-400">
-                                        {expandedSection === section.id ? (
-                                            <ChevronUp className="h-5 w-5" />
-                                        ) : (
-                                            <ChevronDown className="h-5 w-5" />
-                                        )}
+                                    <div className="bg-gray-50 px-8 py-4 border-t border-gray-100 flex items-center justify-between">
+                                        <span className="text-sm font-medium text-blue-600 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                                            Consulter
+                                        </span>
                                     </div>
-                                </button>
-                                {expandedSection === section.id && (
-                                    <div className="pb-6 pt-2 text-gray-600 leading-relaxed animate-in fade-in slide-in-from-top-2 duration-200">
-                                        {section.content}
-                                    </div>
-                                )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Modal */}
+                {selectedDoc && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div
+                            className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="p-8">
+                                <div className="flex items-start justify-between mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-900 pr-8">
+                                        {selectedDoc.titre}
+                                    </h2>
+                                    <button
+                                        onClick={() => setSelectedDoc(null)}
+                                        className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900"
+                                    >
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                <div className="prose prose-blue max-w-none text-gray-700">
+                                    {selectedDoc.description && (
+                                        <div className="mb-6 text-lg text-gray-600 leading-relaxed border-b border-gray-100 pb-6">
+                                            {selectedDoc.description}
+                                        </div>
+                                    )}
+
+                                    {selectedDoc.contenu && (
+                                        <div className="mb-8 whitespace-pre-wrap leading-relaxed">
+                                            {selectedDoc.contenu}
+                                        </div>
+                                    )}
+
+                                    {selectedDoc.lien && (
+                                        <a
+                                            href={selectedDoc.lien.startsWith('http') ? selectedDoc.lien : `https://${selectedDoc.lien}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                            Accéder à la ressource externe
+                                        </a>
+                                    )}
+
+                                    {!selectedDoc.contenu && !selectedDoc.lien && (
+                                        <p className="text-gray-400 italic">Aucun contenu supplémentaire disponible.</p>
+                                    )}
+                                </div>
                             </div>
-                        ))}
+                        </div>
                     </div>
-                </div>
+                )}
 
-                {/* Help Section */}
-                <div className="bg-[#1e4066] rounded-2xl p-8 text-center text-white mb-12">
-                    <h2 className="text-2xl font-bold mb-2">Besoin d'aide ?</h2>
-                    <p className="text-blue-100 mb-4">
-                        Notre équipe est là pour vous accompagner et répondre à toutes vos questions.
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-8 text-yellow-400 font-medium">
-                        <a href="mailto:associationhandepassement@gmail.com" className="hover:underline">
-                            associationhandepassement@gmail.com
-                        </a>
-                        <span className="hidden sm:inline text-blue-400">|</span>
-                        <a href="tel:+33781865744" className="hover:underline">
-                            +33 7 81 86 57 44
-                        </a>
-                    </div>
-                </div>
-            </main>
-
+                <Oeil />
+            </div>
             <FooterMain />
-            <Oeil />
-        </div>
+        </>
     );
-};
+}
 
 export default Documentation;
