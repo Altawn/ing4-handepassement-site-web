@@ -5,6 +5,7 @@ import HeaderClient from '../components/HeaderClient';
 import FooterMain from '../components/FooterMain';
 import Oeil from '../components/Oeil';
 import { getTasksForStudent, updateTaskStatus, Task, getStudentRdvs, StudentRdv } from '../services/airtable';
+import CalendarWidget from '../components/CalendarWidget';
 
 function EspaceEtudiant() {
     const navigate = useNavigate();
@@ -82,61 +83,10 @@ function EspaceEtudiant() {
                         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
                             <h2 className="text-2xl font-bold text-slate-800 mb-6">Mon calendrier</h2>
                             <div className="space-y-4">
-                                {/* Calendar placeholder - mimicking the visual from the image */}
-                                <div className="border border-gray-200 rounded-xl p-4 bg-white">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-md">
-                                                <Calendar className="w-5 h-5" />
-                                            </div>
-                                            <span className="font-semibold text-gray-700">Calendar</span>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex bg-gray-100 rounded-md p-1">
-                                                <button className="px-3 py-1 text-sm font-medium bg-white shadow-sm rounded-md text-gray-800">Month</button>
-                                                <button className="px-3 py-1 text-sm font-medium text-gray-500">Week</button>
-                                                <button className="px-3 py-1 text-sm font-medium text-gray-500">Day</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-lg font-bold text-gray-900">January 2025</h3>
-                                        <div className="flex gap-2">
-                                            <button className="p-1 hover:bg-gray-100 rounded"><span className="text-gray-500">❮</span></button>
-                                            <button className="p-1 hover:bg-gray-100 rounded"><span className="text-gray-500">❯</span></button>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-7 gap-2 text-center text-xs mb-2">
-                                        {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day) => (
-                                            <div key={day} className="font-semibold text-gray-400 py-2">
-                                                {day}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="grid grid-cols-7 gap-2 text-center text-sm">
-                                        {[...Array(31)].map((_, i) => {
-                                            const day = i + 1;
-                                            // Mocking the selection from the image (11th selected)
-                                            const isSelected = day === 11;
-
-                                            return (
-                                                <div
-                                                    key={i}
-                                                    className={`h-10 w-10 mx-auto flex items-center justify-center rounded-full ${isSelected
-                                                        ? 'bg-blue-600 text-white font-bold shadow-md'
-                                                        : 'text-gray-700 hover:bg-gray-50'
-                                                        }`}
-                                                >
-                                                    {day}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
+                                <CalendarWidget />
                             </div>
                         </div>
+
 
                         {/* Tasks Section */}
                         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">

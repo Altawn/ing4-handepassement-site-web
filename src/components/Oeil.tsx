@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Eye, X, Type, AlignJustify, Palette, Sun } from 'lucide-react';
 
 interface AccessibilitySettings {
@@ -30,26 +31,26 @@ const Oeil = () => {
     });
 
     const applySettings = () => {
-        const root = document.documentElement;
+        const htmlRoot = document.documentElement;
+        const appRoot = document.getElementById('root');
 
-        // Apply font size
-        root.style.setProperty('--base-font-size', `${settings.fontSize}px`);
+        if (!appRoot) return;
 
-        // Apply letter spacing
-        root.style.setProperty('--letter-spacing', `${settings.letterSpacing}px`);
+        // Apply font size and spacing to HTML root for global impact (rem usage)
+        htmlRoot.style.setProperty('--base-font-size', `${settings.fontSize}px`);
+        htmlRoot.style.setProperty('--letter-spacing', `${settings.letterSpacing}px`);
 
-        // Apply color blind mode filters
+        // Apply filters/contrast ONLY to the app root to avoid breaking fixed positioning of the portal
         if (settings.colorBlindMode !== 'normal') {
-            root.classList.add(`colorblind-${settings.colorBlindMode}`);
+            appRoot.classList.add(`colorblind-${settings.colorBlindMode}`);
         } else {
-            root.classList.remove('colorblind-protan', 'colorblind-deutan', 'colorblind-tritan');
+            appRoot.classList.remove('colorblind-protan', 'colorblind-deutan', 'colorblind-tritan');
         }
 
-        // Apply contrast
         if (settings.contrast === 'high') {
-            root.classList.add('high-contrast');
+            appRoot.classList.add('high-contrast');
         } else {
-            root.classList.remove('high-contrast');
+            appRoot.classList.remove('high-contrast');
         }
     };
 
@@ -61,10 +62,15 @@ const Oeil = () => {
             contrast: 'normal'
         });
 
-        const root = document.documentElement;
-        root.style.removeProperty('--base-font-size');
-        root.style.removeProperty('--letter-spacing');
-        root.classList.remove('colorblind-protan', 'colorblind-deutan', 'colorblind-tritan', 'high-contrast');
+        const htmlRoot = document.documentElement;
+        const appRoot = document.getElementById('root');
+
+        htmlRoot.style.removeProperty('--base-font-size');
+        htmlRoot.style.removeProperty('--letter-spacing');
+
+        if (appRoot) {
+            appRoot.classList.remove('colorblind-protan', 'colorblind-deutan', 'colorblind-tritan', 'high-contrast');
+        }
 
         // Clear from localStorage
         localStorage.removeItem('accessibilitySettings');
@@ -79,6 +85,11 @@ const Oeil = () => {
     };
 
     const handleColorBlindMode = (mode: 'normal' | 'protan' | 'deutan' | 'tritan') => {
+        // Clear previous modes first to ensure clean switch immediately
+        const appRoot = document.getElementById('root');
+        if (appRoot) {
+            appRoot.classList.remove('colorblind-protan', 'colorblind-deutan', 'colorblind-tritan');
+        }
         setSettings({ ...settings, colorBlindMode: mode });
     };
 
@@ -96,13 +107,14 @@ const Oeil = () => {
         applySettings();
     }, [settings]);
 
-    return (
+    return createPortal(
         <>
             {/* Eye Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="accessibility-eye-button fixed bottom-8 right-8 w-14 h-14 bg-brand rounded-full flex items-center justify-center shadow-2xl hover:bg-brand-600 transition-colors z-50 border-2 border-white"
+                className="accessibility-eye-button fixed bottom-8 right-8 w-14 h-14 bg-brand rounded-full flex items-center justify-center shadow-2xl hover:bg-brand-600 transition-colors z-[9999] border-2 border-white"
                 aria-label="Paramètres d'accessibilité"
+                style={{ position: 'fixed', bottom: '2rem', right: '2rem' }} // Inline enforcement
             >
                 <Eye className="w-6 h-6 text-white" />
             </button>
@@ -112,12 +124,12 @@ const Oeil = () => {
                 <>
                     {/* Backdrop */}
                     <div
-                        className="fixed inset-0 bg-black/30 z-40"
+                        className="fixed inset-0 bg-black/30 z-[9998]"
                         onClick={() => setIsOpen(false)}
                     />
 
                     {/* Panel */}
-                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl z-50 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl z-[9999] w-full max-w-md max-h-[90vh] overflow-y-auto">
                         <div className="p-6">
                             {/* Header */}
                             <div className="flex items-center justify-between mb-6">
@@ -302,7 +314,8 @@ const Oeil = () => {
                     </div>
                 </>
             )}
-        </>
+        </>,
+        document.body
     );
 };
 
