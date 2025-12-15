@@ -83,7 +83,7 @@ function EspaceEtudiant() {
                         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
                             <h2 className="text-2xl font-bold text-slate-800 mb-6">Mon calendrier</h2>
                             <div className="space-y-4">
-                                <CalendarWidget />
+                                <CalendarWidget highlightDates={rdvs.filter(r => r.status !== 'Annulé' && r.status !== 'Reporté').map(r => new Date(r.rawDate))} />
                             </div>
                         </div>
 

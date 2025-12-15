@@ -1,7 +1,11 @@
+interface CalendarWidgetProps {
+    highlightDates?: Date[];
+}
+
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 
-export default function CalendarWidget() {
+export default function CalendarWidget({ highlightDates = [] }: CalendarWidgetProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const handleDataChange = (direction: 'prev' | 'next') => {
@@ -46,6 +50,14 @@ export default function CalendarWidget() {
             date.getFullYear() === currentDate.getFullYear();
     };
 
+    const hasEvent = (date: Date) => {
+        return highlightDates.some(d =>
+            d.getDate() === date.getDate() &&
+            d.getMonth() === date.getMonth() &&
+            d.getFullYear() === date.getFullYear()
+        );
+    };
+
     const monthNames = ["January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
     ];
@@ -59,7 +71,7 @@ export default function CalendarWidget() {
                     <div className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-md">
                         <Calendar className="w-5 h-5" />
                     </div>
-                    <span className="font-semibold text-gray-700">Calendar</span>
+                    <span className="font-semibold text-gray-700">Calendrier</span>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex bg-gray-100 rounded-md p-1">
@@ -105,6 +117,7 @@ export default function CalendarWidget() {
                     if (!item.day) return <div key={item.key}></div>; // padding
 
                     const isCurrent = isToday(item.date);
+                    const isHighlighted = hasEvent(item.date);
 
                     return (
                         <div
@@ -112,14 +125,21 @@ export default function CalendarWidget() {
                             onClick={() => {
                                 setCurrentDate(item.date);
                             }}
-                            className={`h-10 w-10 mx-auto flex items-center justify-center rounded-full cursor-pointer transition ${isSelected(item.date)
-                                    ? 'bg-blue-600 text-white font-bold shadow-md'
-                                    : isCurrent
-                                        ? 'border border-blue-600 text-blue-600 font-bold'
-                                        : 'text-gray-700 hover:bg-gray-100'
+                            className={`h-10 w-10 mx-auto flex flex-col items-center justify-center rounded-full cursor-pointer transition relative ${isSelected(item.date)
+                                ? 'bg-blue-600 text-white font-bold shadow-md'
+                                : isCurrent
+                                    ? 'border border-blue-600 text-blue-600 font-bold'
+                                    : 'text-gray-700 hover:bg-gray-100'
                                 }`}
                         >
-                            {item.day}
+                            <span>{item.day}</span>
+                            {/* Blue dot indicator for events */}
+                            {isHighlighted && !isSelected(item.date) && (
+                                <div className="absolute bottom-1 w-1 h-1 bg-blue-500 rounded-full"></div>
+                            )}
+                            {isHighlighted && isSelected(item.date) && (
+                                <div className="absolute bottom-1 w-1 h-1 bg-white rounded-full"></div>
+                            )}
                         </div>
                     );
                 })}

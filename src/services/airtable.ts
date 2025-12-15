@@ -23,7 +23,7 @@ export const TABLES = {
 export interface RdvData {
     date: Date;
     type: 'Présentiel' | 'Visio';
-    status: 'Attente de Validation' | 'Réalisé';
+    status: 'Attente de Validation' | 'Réalisé' | 'Annulé' | 'Reporté';
     lieu: string;
     lienVisio: string; // "Lien Meet" or empty
     commentaires: string;
@@ -385,13 +385,13 @@ export const createRdv = async (data: RdvData) => {
             studentId = await createProspectStudent(data.studentEmail);
         }
 
-        // 3. Format Date (Compensation GMT+1)
-        // On décale l'heure pour compenser la conversion UTC faite par toISOString()
-        // Si l'utilisateur choisit 16h (GMT+1), toISOString envoie 15h (UTC).
-        // On ajoute donc le décalage horaire pour que toISOString envoie 16h.
-        const offset = data.date.getTimezoneOffset() * 60000; // en ms
-        const localDate = new Date(data.date.getTime() - offset);
-        const dateString = localDate.toISOString().replace('Z', ''); // On retire le Z pour dire "c'est l'heure locale"
+        // 3. Format Date
+        // We manually construct local ISO string to ensure we send exact clock time.
+        // toISOString() converts to UTC (e.g. 11:30 -> 10:30Z).
+        // If Airtable/User expects 11:30 as the "value", sending 11:30 (no Z) is safer if Base is set to Local.
+        const d = data.date;
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const dateString = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00.000`;
 
         // 4. Get Next ID
         const nextId = await getNextRdvId();
@@ -443,9 +443,10 @@ export const updateRdv = async (rdvId: string, data: Partial<RdvData>) => {
     try {
         const fields: any = {};
         if (data.date) {
-            const offset = data.date.getTimezoneOffset() * 60000;
-            const localDate = new Date(data.date.getTime() - offset);
-            fields["Date"] = localDate.toISOString().replace('Z', '');
+            // Use manual local ISO string logic
+            const d = data.date;
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            fields["Date"] = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00.000`;
         }
         if (data.type) fields["Type d'entretien"] = data.type;
         if (data.status) fields["Statut du RDV"] = data.status;
@@ -481,6 +482,10 @@ export const updateRdv = async (rdvId: string, data: Partial<RdvData>) => {
     }
 };
 
+export const cancelRdv = async (rdvId: string) => {
+    return updateRdv(rdvId, { status: 'Annulé' });
+};
+
 export const getDashboardStats = async () => {
     if (!apiKey || !baseId) throw new Error("Airtable config missing");
 
@@ -514,6 +519,7 @@ export interface IncomingRdv {
     type: string;
     date: string;
     status: string;
+    admin?: string;
 }
 
 export const getUpcomingAppointments = async (limit: number = 3): Promise<IncomingRdv[]> => {
@@ -553,6 +559,44 @@ export const getUpcomingAppointments = async (limit: number = 3): Promise<Incomi
         return upcomingRdvs;
     } catch (error) {
         console.error("Error fetching upcoming appointments:", error);
+        return [];
+    }
+};
+
+
+export const getAppointmentsForStudent = async (studentId: string): Promise<IncomingRdv[]> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        // 1. Fetch Student to get linked RDV IDs
+        const studentRecord = await base(TABLES.ETUDIANT).find(studentId);
+        const rdvIds = (studentRecord.get('RDV') as string[]) || [];
+
+        if (rdvIds.length === 0) return [];
+
+        // 2. Fetch all generic RDVs in parallel (optimization: could confirm if this scales, but for < 50 apps it's fine)
+        // Alternatively, use filterByFormula with RECORD_ID() but that can get long.
+        // Given typically low N of appointments, Promise.all is acceptable.
+
+        const rdvPromises = rdvIds.map(id => base(TABLES.RDV).find(id));
+        const rdvRecords = await Promise.all(rdvPromises);
+
+        // 3. Map to IncomingRdv
+        const appointments = rdvRecords.map(record => ({
+            id: record.id,
+            studentName: "Vous",
+            type: record.get("Type d'entretien") as string,
+            date: record.get("Date") as string,
+            status: record.get("Statut du RDV") as string,
+            admin: record.get("Administrateur") as string
+        }));
+
+        // Sort by date (descending or ascending? User usually wants upcoming first. Let's sort client side or here)
+        // Sorting here by date ascending (closest first)
+        return appointments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    } catch (error) {
+        console.error("Error fetching student appointments:", error);
         return [];
     }
 };
