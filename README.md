@@ -57,13 +57,13 @@ Pour lancer le projet localement sur votre machine :
 ## ✅ To-Do List
 
 Cette section liste les tâches restantes et les améliorations à apporter au projet.
-
--- [ ] **Inscription**
-    - [ ] Rendre les champs obligatoires.
-    - [ ] Ajouter champ aidant familial
+- [ ] **Inscription**
+    - [x] Rendre les champs obligatoires.
+    - [x] Ajouter champ aidant familial
     - [ ] En mode Tritanopie, la page inscription est floutée 
-    - [ ] Modal et oeil bloqué en mode Tritanopie et les autres
-    - [ ] Protéger les mdp dans la bdd (admin devrait pas pouvoir les voir je pense)
+    - [x] Modal et oeil bloqué en mode Tritanopie et les autres
+    - [x] Protéger les mdp dans la bdd (admin devrait pas pouvoir les voir je pense)
+    - [x] si letudiant coche oui pour aidant familial, il faut qu'il mette le nom ou mail? ou alors on met juste oui/non
 
 
 - [ ] **Prise de rendez-vous**
@@ -72,15 +72,15 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
 
 
 - [ ] **BDD**
-    - [ ] Gérer statut étudiant "en attente" après premier RDV
-    - [ ] Verif si l'étudiant est déjà dans la base en tant que "Etudiant" avant d'autoriser l'inscription (pas en attente) 
+    - [x] Gérer statut étudiant "en attente" après premier RDV
+    - [x] Verif si l'étudiant est déjà dans la base en tant que "Etudiant" avant d'autoriser l'inscription (pas en attente) 
     - [ ] rajouter champs disponibilités dans table admin (ou creer un table en plus connecté a l'admin)
 
 
 - [ ] **RDV**
     - [ ] connecter prise de rdv depuis page de connexion de l'étudiant
-    - [ ] creer le champs de remplissage du résumé du rdv dans admin
-    - [ ] connecté ces résumés à l'étudiant en question dans son espace 
+    - [x] creer le champs de remplissage du résumé du rdv dans admin
+    - [x] connecté ces résumés à l'étudiant en question dans son espace 
     - [ ] enlever le bouton "nouveau rendez-vous" dans l'espace admin (si elle veut un rdv soit on met ca dans la to do list de l'étudiant - en mode prend un rdv avec moi, soit on envoie un mail)
     - [ ] rajouter une page ou un endroit pour que myriam puisse remplir ses dispo - comment on gere ca dans la bdd????
     - [ ] réalisé et validé ??? 
@@ -88,25 +88,31 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
 
 - [ ] **Connexion**
     - [x] Footer qui est en haut de la page
-    - [ ] Régler le fait que si on tape "/admin" dans l'adresse, on est redirigé vers la page admin sans même s'être connecté (Faire une protection sur les pages nécessitant une connexion)
+    - [x] Régler le fait que si on tape "/admin" dans l'adresse, on est redirigé vers la page admin sans même s'être connecté (Faire une protection sur les pages nécessitant une connexion)
 
 
 - [ ] **Admin**
-    - [ ] rajouter bouton pour valider un etudiant - le faire passer de "en attente" à "etudiant"
-    - [ ] detail de l'étudiant à lié avec l'étudiant sur lequel on clique, afficher ses infos (avec airtable)
+    - [x] rajouter bouton pour valider un etudiant - le faire passer de "en attente" à "etudiant"
+    - [x] detail de l'étudiant à lié avec l'étudiant sur lequel on clique, afficher ses infos (avec airtable)
 
 
 - [ ] **Documentation**
-    - [ ] creer la table documentation dans airtable
-    - [ ] lier l'accès à la documentation à l'admin avec ajout et modification 
-    - [ ] afficher la documentation dans l'espace etudiant
+    - [x] creer la table documentation dans airtable
+    - [x] lier l'accès à la documentation à l'admin avec ajout et modification 
+    - [x] afficher la documentation dans l'espace etudiant
 
 
 - [ ] **Automatisation**
-    - [ ] Envoi de mail automatique pour la prise de RDV
+    - [x] Envoi de mail automatique pour la prise de RDV
+
 
 - [ ] **Général**
-    - [ ] Quand appui du bouton Handépassement alors qu'on est ceonnecté -> déconnexion (on veut être redirigé vers la page accueil client ou admin quand on clique sur handépassement et qu'on est connecté)
+    - [x] Quand appui du bouton Handépassement alors qu'on est ceonnecté -> déconnexion (on veut être redirigé vers la page accueil client ou admin quand on clique sur handépassement et qu'on est connecté)
 
----
+
+- [ ] **Espace étudiant**
+    - [x] enlever ou mettre en place le bouton weekly monthly dans le calendrier - on peut pas non plus changer de mois avec les fleches
+    
+    
+    ---
 *Projet réalisé dans le cadre de l'ING4.*
