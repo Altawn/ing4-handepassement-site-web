@@ -78,12 +78,13 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
 
 
 - [ ] **RDV**
-    - [ ] connecter prise de rdv depuis page de connexion de l'étudiant
+    - [x] connecter prise de rdv depuis page de connexion de l'étudiant
     - [x] creer le champs de remplissage du résumé du rdv dans admin
     - [x] connecté ces résumés à l'étudiant en question dans son espace 
-    - [ ] enlever le bouton "nouveau rendez-vous" dans l'espace admin (si elle veut un rdv soit on met ca dans la to do list de l'étudiant - en mode prend un rdv avec moi, soit on envoie un mail)
+    - [x] enlever le bouton "nouveau rendez-vous" dans l'espace admin (si elle veut un rdv soit on met ca dans la to do list de l'étudiant - en mode prend un rdv avec moi, soit on envoie un mail)
     - [ ] rajouter une page ou un endroit pour que myriam puisse remplir ses dispo - comment on gere ca dans la bdd????
     - [ ] réalisé et validé ??? 
+    - [ ] faire un bouton pour valider ou annuler un rdv coté admin
 
 
 - [ ] **Connexion**
