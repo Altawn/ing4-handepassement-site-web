@@ -38,13 +38,13 @@ function StudentManagement() {
     }, []);
 
     const handleValidate = async (studentId: string) => {
-        if (!confirm("Voulez-vous vraiment valider cet étudiant ? Cela lui donnera le statut 'Étudiant'.")) return;
+        if (!confirm("Voulez-vous vraiment valider cet étudiant ? Cela lui donnera le statut 'validation'.")) return;
 
         setProcessingId(studentId);
         try {
-            await updateStudentStatus(studentId, 'Étudiant');
+            await updateStudentStatus(studentId, 'validation');
             // Update local state
-            setStudents(prev => prev.map(s => s.id === studentId ? { ...s, statut: 'Étudiant' } : s));
+            setStudents(prev => prev.map(s => s.id === studentId ? { ...s, statut: 'validation' } : s));
         } catch (err) {
             console.error(err);
             alert("Erreur lors de la validation");
@@ -61,6 +61,7 @@ function StudentManagement() {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'Étudiant': return 'bg-green-100 text-green-800';
+            case 'validation': return 'bg-blue-100 text-blue-800';
             case 'En attente': return 'bg-orange-100 text-orange-800';
             default: return 'bg-gray-100 text-gray-800';
         }

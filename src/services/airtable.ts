@@ -41,7 +41,8 @@ export interface StudentData {
     studyLevel: string;
     disabilityTypes: string[];
     needsDescription: string;
-    aidantFamilial?: boolean; // New field
+    aidantFamilial?: boolean;
+    aidantDescription?: string;
     acceptTerms: boolean;
     password: string;
 }
@@ -71,7 +72,7 @@ export const updateStudentStatus = async (studentId: string, status: string) => 
     try {
         await base(TABLES.ETUDIANT).update(studentId, {
             "Statut": status
-        });
+        }, { typecast: true });
     } catch (error) {
         console.error("Error updating student status:", error);
         throw error;
@@ -102,15 +103,22 @@ export const createStudent = async (data: StudentData) => {
             maxRecords: 1
         }).firstPage();
 
-        if (existingRecords.length > 0) {
-            const rec = existingRecords[0];
-            // Allow updating even if Statut is 'Étudiant' (Account Claiming / Password Reset via Registration)
-            // if (rec.get('Statut') === 'Étudiant') {
-            //     throw new Error("ACCOUNT_EXISTS");
-            // }
-            // If En attente OR Étudiant, we update it
-            existingId = rec.id;
+        if (existingRecords.length === 0) {
+            throw new Error("EMAIL_NOT_FOUND");
         }
+
+        const rec = existingRecords[0];
+        const currentStatus = rec.get('Statut') as string;
+
+        // Strict Check: Only 'validation' status allowed for registration
+        if (currentStatus !== 'validation') {
+            if (currentStatus === 'Étudiant') {
+                throw new Error("ACCOUNT_EXISTS");
+            }
+            throw new Error("STATUS_NOT_VALIDATION");
+        }
+
+        existingId = rec.id;
 
         // Prepare values
         const studyLevel = STUDY_LEVEL_MAP[data.studyLevel] || data.studyLevel;
@@ -128,7 +136,8 @@ export const createStudent = async (data: StudentData) => {
             "Annee Etude": studyLevel,
             "Mot de passe": hashedPassword,
             "Handicaps": disabilities,
-            "Aidant familial": data.aidantFamilial ? "Oui" : "Non", // Map to Oui/Non because boolean failed
+            "aidant ?": data.aidantFamilial ? "oui" : "non", // Updated column name based on screenshot
+            "Aidant familial": data.aidantDescription || "", // Updated column mapping
             // Preserve existing links if updating
         };
 
@@ -750,7 +759,7 @@ export const createTask = async (title: string, date: string, studentId: string)
     }
 };
 
-export const getStudent = async (id: string): Promise<StudentData & { id: string } | null> => {
+export const getStudent = async (id: string): Promise<StudentData & { id: string; statut: string } | null> => {
     if (!apiKey || !baseId) throw new Error("Airtable config missing");
     try {
         const record = await base(TABLES.ETUDIANT).find(id);
@@ -777,7 +786,8 @@ export const getStudent = async (id: string): Promise<StudentData & { id: string
             disabilityTypes: handicaps.filter(h => h),
             needsDescription: "", // Not in verify table
             acceptTerms: true,
-            password: ""
+            password: "",
+            statut: record.get('Statut') as string || 'En attente'
         };
     } catch (error) {
         console.error("Error fetching student:", error);
@@ -960,6 +970,36 @@ export const deleteDocumentation = async (id: string) => {
         await base(TABLES.DOCUMENTATION).destroy(id);
     } catch (error) {
         console.error("Error deleting documentation:", error);
+        throw error;
+    }
+};
+
+export const checkStudentStatus = async (email: string) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        const records = await base(TABLES.ETUDIANT).select({
+            filterByFormula: `{Adresse mail} = '${email}'`,
+            maxRecords: 1
+        }).firstPage();
+
+        if (records.length === 0) {
+            throw new Error("EMAIL_NOT_FOUND");
+        }
+
+        const rec = records[0];
+        const currentStatus = rec.get('Statut') as string;
+
+        // Strict Check: Only 'validation' status allowed for registration
+        if (currentStatus !== 'validation') {
+            if (currentStatus === 'Étudiant') {
+                throw new Error("ACCOUNT_EXISTS");
+            }
+            throw new Error("STATUS_NOT_VALIDATION");
+        }
+
+        return true;
+    } catch (error) {
         throw error;
     }
 };

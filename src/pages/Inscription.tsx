@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../style/Inscription.css';
 import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import HeaderInscription from '../components/HeaderInscription';
-import { createStudent } from '../services/airtable';
+import { createStudent, checkStudentStatus } from '../services/airtable';
 
 export default function Inscription() {
+    const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -21,11 +23,61 @@ export default function Inscription() {
         studyLevel: '',
         disabilityTypes: [] as string[], // Changed to array
         needsDescription: '',
-        aidantFamilial: false,
+        aidantFamilial: null as boolean | null,
+        aidantDescription: '',
         acceptTerms: false
     });
 
-    const nextStep = () => setStep(step + 1);
+    const validateStep = (currentStep: number) => {
+        if (currentStep === 1) {
+            if (!formData.prenom || !formData.nom || !formData.email || !formData.password || !formData.confirmPassword) {
+                return "Veuillez remplir tous les champs obligatoires.";
+            }
+            if (formData.password !== formData.confirmPassword) {
+                return "Les mots de passe ne correspondent pas.";
+            }
+            if (formData.aidantFamilial === null) {
+                return "La question sur l'aidant familial est obligatoire.";
+            }
+        }
+        if (currentStep === 2) {
+            if (!formData.university || !formData.fieldOfStudy || !formData.studyLevel) {
+                return "Veuillez remplir tous les champs obligatoires.";
+            }
+        }
+        return null;
+    };
+
+    const nextStep = async () => {
+        const validationError = validateStep(step);
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
+
+        if (step === 1) {
+            setIsLoading(true);
+            try {
+                await checkStudentStatus(formData.email);
+            } catch (err: any) {
+                console.error(err);
+                if (err.message === "ACCOUNT_EXISTS") {
+                    setError("Un compte existe déjà pour cette adresse email. Veuillez vous connecter.");
+                } else if (err.message === "STATUS_NOT_VALIDATION" || err.message === "EMAIL_NOT_FOUND") {
+                    setError("Email non reconnu, prenez d'abord un premier rdv.");
+                } else {
+                    setError("Une erreur est survenue. Veuillez réessayer.");
+                }
+                setIsLoading(false);
+                return;
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        setError(null);
+        setStep(step + 1);
+    };
     const prevStep = () => setStep(step - 1);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -52,13 +104,22 @@ export default function Inscription() {
     const handleSubmit = async () => {
         setIsLoading(true);
         setError(null);
+
+        if (formData.disabilityTypes.length === 0) {
+            setError("Veuillez sélectionner au moins un type de handicap.");
+            setIsLoading(false);
+            return;
+        }
+
         try {
-            await createStudent(formData);
-            nextStep(); // Go to success step
+            await createStudent(formData as any);
+            nextStep();
         } catch (err: any) {
             console.error(err);
             if (err.message === "ACCOUNT_EXISTS") {
                 setError("Un compte existe déjà pour cette adresse email. Veuillez vous connecter.");
+            } else if (err.message === "STATUS_NOT_VALIDATION" || err.message === "EMAIL_NOT_FOUND") {
+                setError("Email non reconnu, prenez d'abord un premier rdv.");
             } else {
                 setError("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
             }
@@ -99,6 +160,12 @@ export default function Inscription() {
                         <div className="step-content animate-fade-in">
                             <h2 className="text-xl font-bold text-neutral-800 mb-1">Informations personnelles</h2>
                             <p className="text-sm text-neutral-500 mb-4">Étape 1 sur 3</p>
+
+                            {error && step === 1 && (
+                                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                                    {error}
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                                 <div className="form-group">
@@ -149,18 +216,43 @@ export default function Inscription() {
                                 />
                             </div>
 
-                            <div className="mb-3 flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    name="aidantFamilial"
-                                    id="aidantFamilial"
-                                    className="w-4 h-4 text-brand border-neutral-300 rounded focus:ring-brand-400"
-                                    checked={formData.aidantFamilial}
-                                    onChange={handleCheckboxChange}
-                                />
-                                <label htmlFor="aidantFamilial" className="text-xs font-medium text-neutral-700 cursor-pointer">
-                                    Je suis un aidant familial
-                                </label>
+                            <div className="mb-3">
+                                <label className="block text-xs font-medium text-neutral-700 mb-1">Avez-vous un aidant familial ? *</label>
+                                <div className="flex gap-4">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="aidantFamilial"
+                                            className="w-4 h-4 text-brand border-neutral-300 focus:ring-brand-400"
+                                            checked={formData.aidantFamilial === true}
+                                            onChange={() => setFormData(prev => ({ ...prev, aidantFamilial: true }))}
+                                        />
+                                        <span className="text-sm text-neutral-700">Oui</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="aidantFamilial"
+                                            className="w-4 h-4 text-brand border-neutral-300 focus:ring-brand-400"
+                                            checked={formData.aidantFamilial === false}
+                                            onChange={() => setFormData(prev => ({ ...prev, aidantFamilial: false, aidantDescription: '' }))}
+                                        />
+                                        <span className="text-sm text-neutral-700">Non</span>
+                                    </label>
+                                </div>
+                                {formData.aidantFamilial === true && (
+                                    <div className="mt-2 animate-fade-in pl-1">
+                                        <label className="block text-xs font-medium text-neutral-700 mb-1">Qui est votre aidant ? (facultatif)</label>
+                                        <input
+                                            type="text"
+                                            name="aidantDescription"
+                                            className="w-full px-3 py-1.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition text-sm"
+                                            value={formData.aidantDescription}
+                                            onChange={handleChange}
+                                            placeholder="Ex: Ma mère, Mon frère..."
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <div className="mb-3 relative">
@@ -197,8 +289,16 @@ export default function Inscription() {
                             </div>
 
                             <div className="flex justify-end">
-                                <button className="flex items-center gap-2 bg-brand text-white px-5 py-2 rounded-lg hover:bg-brand-400 transition text-sm" onClick={nextStep}>
-                                    Suivant <ChevronRight size={18} />
+                                <button
+                                    className={`flex items-center gap-2 bg-brand text-white px-5 py-2 rounded-lg hover:bg-brand-400 transition text-sm ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    onClick={nextStep}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <>Vérification <Loader2 size={18} className="animate-spin" /></>
+                                    ) : (
+                                        <>Suivant <ChevronRight size={18} /></>
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -209,6 +309,12 @@ export default function Inscription() {
                         <div className="step-content animate-fade-in">
                             <h2 className="text-xl font-bold text-neutral-800 mb-1">Informations académiques</h2>
                             <p className="text-sm text-neutral-500 mb-4">Étape 2 sur 3</p>
+
+                            {error && step === 2 && (
+                                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                                    {error}
+                                </div>
+                            )}
 
                             <div className="mb-3">
                                 <label className="block text-xs font-medium text-neutral-700 mb-1">Université / École *</label>
@@ -282,7 +388,7 @@ export default function Inscription() {
                             )}
 
                             <div className="mb-3">
-                                <label className="block text-xs font-medium text-neutral-700 mb-2">Type de handicap ou trouble (plusieurs choix possibles)</label>
+                                <label className="block text-xs font-medium text-neutral-700 mb-2">Type de handicap ou trouble (plusieurs choix possibles) *</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {disabilityOptions.map((option) => (
                                         <label key={option} className={`flex items-center p-2 border rounded-lg cursor-pointer transition text-sm ${formData.disabilityTypes.includes(option) ? 'border-brand bg-brand-50 text-brand-900' : 'border-neutral-200 hover:border-brand-200'}`}>
@@ -357,8 +463,11 @@ export default function Inscription() {
                             <p className="text-neutral-600 mb-6 max-w-md mx-auto text-sm">
                                 Votre compte a été créé avec succès. Vous pouvez maintenant accéder à votre tableau de bord.
                             </p>
-                            <button className="bg-brand text-white px-6 py-2.5 rounded-lg hover:bg-brand-400 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-sm">
-                                Accéder au tableau de bord
+                            <button
+                                onClick={() => navigate('/connexion')}
+                                className="bg-brand text-white px-6 py-2.5 rounded-lg hover:bg-brand-400 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-sm"
+                            >
+                                Accéder à la page de connexion
                             </button>
                         </div>
                     )}
