@@ -74,7 +74,7 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
 - [ ] **BDD**
     - [x] Gérer statut étudiant "en attente" après premier RDV
     - [x] Verif si l'étudiant est déjà dans la base en tant que "Etudiant" avant d'autoriser l'inscription (pas en attente) 
-    - [ ] rajouter champs disponibilités dans table admin (ou creer un table en plus connecté a l'admin)
+    - [x] rajouter champs disponibilités dans table admin (ou creer un table en plus connecté a l'admin)
 
 
 - [ ] **RDV**
@@ -82,8 +82,8 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
     - [x] creer le champs de remplissage du résumé du rdv dans admin
     - [x] connecté ces résumés à l'étudiant en question dans son espace 
     - [x] enlever le bouton "nouveau rendez-vous" dans l'espace admin (si elle veut un rdv soit on met ca dans la to do list de l'étudiant - en mode prend un rdv avec moi, soit on envoie un mail)
-    - [ ] rajouter une page ou un endroit pour que myriam puisse remplir ses dispo - comment on gere ca dans la bdd????
-    - [ ] réalisé et validé ??? 
+    - [x] rajouter une page ou un endroit pour que myriam puisse remplir ses dispo - comment on gere ca dans la bdd????
+    - [x] réalisé et validé ??? 
     - [ ] faire un bouton pour valider ou annuler un rdv coté admin
 
 

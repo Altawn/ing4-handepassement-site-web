@@ -23,6 +23,7 @@ export const TABLES = {
 // Interface for Appointment Data
 export interface RdvData {
     date: Date;
+    dateFin?: Date; // Optional in interface, calculated automatically
     type: 'Présentiel' | 'Visio';
     status: 'Attente de Validation' | 'Réalisé' | 'Annulé' | 'Reporté';
     lieu: string;
@@ -387,24 +388,34 @@ export const createRdv = async (data: RdvData) => {
         }
 
         // 3. Format Date
-        // We manually construct local ISO string to ensure we send exact clock time.
-        // toISOString() converts to UTC (e.g. 11:30 -> 10:30Z).
-        // If Airtable/User expects 11:30 as the "value", sending 11:30 (no Z) is safer if Base is set to Local.
+        // Helper to format date for Airtable (Local Mean Time string)
+        const formatAirtableDate = (date: Date) => {
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00.000`;
+        };
+
         const d = data.date;
-        const pad = (n: number) => n.toString().padStart(2, '0');
-        const dateString = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00.000`;
+        const dateString = formatAirtableDate(d);
+
+        // Calculate End Date (+1 hour)
+        // Using timestamp addition to be purely based on time elapsed (3600s)
+        const dFin = new Date(d.getTime() + 60 * 60 * 1000);
+        const dateFinString = formatAirtableDate(dFin);
 
         // 4. Get Next ID
         const nextId = await getNextRdvId();
 
         // 5. Create RDV Record
+        const lienVisioVal = data.type === 'Visio' ? (data.lienVisio || "https://meet.google.com/uva-tphn-spf") : ""; // Lien permanent
+
         console.log("Creating RDV with payload:", {
             "ID RDV": nextId,
-            "Date": dateString,
+            "Date-debut": dateString,
+            "Date-fin": dateFinString,
             "Type d'entretien": data.type,
             "Statut du RDV": data.status,
             "Lieu": data.lieu,
-            "Lien visio": data.lienVisio,
+            "Lien visio": lienVisioVal,
             "Commentaires": data.commentaires,
             "Etudiant": [studentId],
             "Administrateur": data.admin
@@ -414,11 +425,12 @@ export const createRdv = async (data: RdvData) => {
             {
                 fields: {
                     "ID RDV": nextId,
-                    "Date": dateString,
+                    "Date-debut": dateString,
+                    "Date-fin": dateFinString,
                     "Type d'entretien": data.type,
                     "Statut du RDV": data.status,
                     "Lieu": data.lieu,
-                    "Lien visio": data.lienVisio,
+                    "Lien visio": lienVisioVal,
                     "Commentaires": data.commentaires,
                     "Etudiant": [studentId],
                     "Administrateur": data.admin
@@ -444,15 +456,32 @@ export const updateRdv = async (rdvId: string, data: Partial<RdvData>) => {
     try {
         const fields: any = {};
         if (data.date) {
-            // Use manual local ISO string logic
+            // Helper to format date for Airtable (Local Mean Time string)
+            const formatAirtableDate = (date: Date) => {
+                const pad = (n: number) => n.toString().padStart(2, '0');
+                return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00.000`;
+            };
+
             const d = data.date;
-            const pad = (n: number) => n.toString().padStart(2, '0');
-            fields["Date"] = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00.000`;
+            fields["Date-debut"] = formatAirtableDate(d);
+
+            // Calculate End Date (+1 hour)
+            const dFin = new Date(d.getTime() + 60 * 60 * 1000);
+            fields["Date-fin"] = formatAirtableDate(dFin);
         }
         if (data.type) fields["Type d'entretien"] = data.type;
         if (data.status) fields["Statut du RDV"] = data.status;
         if (data.lieu !== undefined) fields["Lieu"] = data.lieu;
-        if (data.lienVisio !== undefined) fields["Lien visio"] = data.lienVisio;
+
+        // Handle Visio Link logic
+        if (data.type === 'Visio') {
+            fields["Lien visio"] = data.lienVisio || "https://meet.google.com/uva-tphn-spf"; // Lien permanent
+        } else if (data.type === 'Présentiel') {
+            fields["Lien visio"] = "";
+        } else if (data.lienVisio !== undefined) {
+            fields["Lien visio"] = data.lienVisio;
+        }
+
         if (data.commentaires !== undefined) fields["Commentaires"] = data.commentaires;
         if (data.admin) fields["Administrateur"] = data.admin;
 
@@ -494,7 +523,7 @@ export const getDashboardStats = async () => {
         // 1. Count RDVs this month
         // Formula: AND(MONTH({Date}) = MONTH(TODAY()), YEAR({Date}) = YEAR(TODAY()))
         const monthRecords = await base(TABLES.RDV).select({
-            filterByFormula: "AND(MONTH({Date}) = MONTH(TODAY()), YEAR({Date}) = YEAR(TODAY()))",
+            filterByFormula: "AND(MONTH({Date-debut}) = MONTH(TODAY()), YEAR({Date-debut}) = YEAR(TODAY()))",
             fields: ["ID RDV"] // Minimal fields
         }).all();
 
@@ -530,8 +559,8 @@ export const getUpcomingAppointments = async (limit: number = 3): Promise<Incomi
         // Filter: Date >= TODAY
         // Sort: Date ASC
         const records = await base(TABLES.RDV).select({
-            filterByFormula: "IS_AFTER({Date}, NOW())",
-            sort: [{ field: "Date", direction: "asc" }],
+            filterByFormula: "IS_AFTER({Date-debut}, NOW())",
+            sort: [{ field: "Date-debut", direction: "asc" }],
             maxRecords: limit
         }).firstPage();
 
@@ -552,7 +581,7 @@ export const getUpcomingAppointments = async (limit: number = 3): Promise<Incomi
                 id: record.id,
                 studentName: studentName,
                 type: record.get("Type d'entretien") as string,
-                date: record.get("Date") as string,
+                date: record.get("Date-debut") as string,
                 status: record.get("Statut du RDV") as string
             };
         }));
@@ -587,7 +616,7 @@ export const getAppointmentsForStudent = async (studentId: string): Promise<Inco
             id: record.id,
             studentName: "Vous",
             type: record.get("Type d'entretien") as string,
-            date: record.get("Date") as string,
+            date: record.get("Date-debut") as string,
             status: record.get("Statut du RDV") as string,
             admin: record.get("Administrateur") as string
         }));
@@ -607,7 +636,7 @@ export const getAllAppointments = async (): Promise<IncomingRdv[]> => {
 
     try {
         const records = await base(TABLES.RDV).select({
-            sort: [{ field: "Date", direction: "desc" }]
+            sort: [{ field: "Date-debut", direction: "desc" }]
         }).all();
 
         const appointments = await Promise.all(records.map(async (record) => {
@@ -1092,7 +1121,7 @@ export const getAvailabilities = async (date: Date): Promise<AvailabilityData[]>
         const dateStr = `${year}-${month}-${day}`;
 
         const records = await base(TABLES.DISPONIBILITES).select({
-            filterByFormula: `IS_SAME({Date}, '${dateStr}')`
+            filterByFormula: `IS_SAME({Date}, '${dateStr}', 'day')`
         }).all();
 
         return records.map(record => ({
@@ -1126,9 +1155,10 @@ export const generateAvailableSlots = async (date: Date): Promise<string[]> => {
         const availabilities = await getAvailabilities(date);
 
         // 2. Fetch Existing RDVs for that day (Active only)
+        // Use Date-debut and ensuring we look at the 'day'
         const rdvRecords = await base(TABLES.RDV).select({
             filterByFormula: `AND(
-                IS_SAME({Date}, '${dateStr}', 'day'),
+                IS_SAME({Date-debut}, '${dateStr}', 'day'),
                 {Statut du RDV} != 'Annulé',
                 {Statut du RDV} != 'Reporté'
             )`
@@ -1136,11 +1166,14 @@ export const generateAvailableSlots = async (date: Date): Promise<string[]> => {
 
         const bookedTimes = new Set<string>();
         rdvRecords.forEach(record => {
-            const rdvDateStr = record.get('Date') as string;
-            const rdvDate = new Date(rdvDateStr);
-            const hours = rdvDate.getUTCHours().toString().padStart(2, '0');
-            const minutes = rdvDate.getUTCMinutes().toString().padStart(2, '0');
-            bookedTimes.add(`${hours}:${minutes}`);
+            const rdvDateStr = record.get('Date-debut') as string;
+            // rdvDateStr is likely "YYYY-MM-DDTHH:mm:00.000" (from our manual save)
+            // We want to extract HH:mm exactly as saved, ignoring timezone
+            if (rdvDateStr && rdvDateStr.includes('T')) {
+                const timePart = rdvDateStr.split('T')[1]; // HH:mm:00.000
+                const [h, m] = timePart.split(':');
+                bookedTimes.add(`${h}:${m}`);
+            }
         });
 
         // 3. Generate Slots
