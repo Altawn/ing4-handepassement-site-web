@@ -25,29 +25,17 @@ body {
 
 /* Color Blind Modes - Protanopia (Red-Blind) */
 .colorblind-protan {
-  filter: url(#protanopia-filter);
-}
-
-.colorblind-protan *:not(.accessibility-eye-button):not(.accessibility-eye-button *) {
-  filter: saturate(0.7) hue-rotate(-10deg);
+  filter: contrast(1.1) hue-rotate(-10deg);
 }
 
 /* Color Blind Modes - Deuteranopia (Green-Blind) */
 .colorblind-deutan {
-  filter: url(#deuteranopia-filter);
-}
-
-.colorblind-deutan *:not(.accessibility-eye-button):not(.accessibility-eye-button *) {
-  filter: saturate(0.6) hue-rotate(10deg);
+  filter: contrast(1.1) hue-rotate(10deg);
 }
 
 /* Color Blind Modes - Tritanopia (Blue-Blind) */
 .colorblind-tritan {
-  filter: url(#tritanopia-filter);
-}
-
-.colorblind-tritan *:not(.accessibility-eye-button):not(.accessibility-eye-button *) {
-  filter: saturate(0.8) hue-rotate(-20deg);
+  filter: contrast(1.1) saturate(1.2) hue-rotate(-5deg);
 }
 
 /* High Contrast Mode */

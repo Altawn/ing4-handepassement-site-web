@@ -60,7 +60,7 @@ Cette section liste les tâches restantes et les améliorations à apporter au p
 - [ ] **Inscription**
     - [x] Rendre les champs obligatoires.
     - [x] Ajouter champ aidant familial
-    - [ ] En mode Tritanopie, la page inscription est floutée 
+    - [x] En mode Tritanopie, la page inscription est floutée 
     - [x] Modal et oeil bloqué en mode Tritanopie et les autres
     - [x] Protéger les mdp dans la bdd (admin devrait pas pouvoir les voir je pense)
     - [x] si letudiant coche oui pour aidant familial, il faut qu'il mette le nom ou mail? ou alors on met juste oui/non
