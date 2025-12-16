@@ -656,7 +656,7 @@ export const getAllAppointments = async (): Promise<IncomingRdv[]> => {
                 id: record.id,
                 studentName: studentName,
                 type: record.get("Type d'entretien") as string,
-                date: record.get("Date") as string,
+                date: record.get("Date-debut") as string,
                 status: record.get("Statut du RDV") as string,
                 // Add extended fields if needed but IncomingRdv is enough for list
             };
@@ -888,7 +888,7 @@ export const getStudentRdvs = async (studentId: string): Promise<StudentRdv[]> =
         // Fetch all RDVs linked to this student
         const records = await base(TABLES.RDV).select({
             // filterByFormula: `SEARCH('${studentId}', {Etudiant})`,
-            sort: [{ field: "Date", direction: "desc" }]
+            sort: [{ field: "Date-debut", direction: "desc" }]
         }).all();
 
         // Check against Linked Record manually to be safe
@@ -901,7 +901,7 @@ export const getStudentRdvs = async (studentId: string): Promise<StudentRdv[]> =
         const now = new Date();
 
         return studentRecords.map(record => {
-            const dateStr = record.get('Date') as string;
+            const dateStr = record.get('Date-debut') as string;
             const rdvDate = new Date(dateStr);
             const isPast = rdvDate < now;
 
