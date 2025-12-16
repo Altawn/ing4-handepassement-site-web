@@ -101,7 +101,7 @@ function FirstRdvStep2() {
 
                 // Determine Lieu/Lien Visio based on type
                 // User requirement: "Pour lien visio met rien s'il choisit en présentiel et ecrit lien meet sil chosit cette option"
-                const lienVisio = appointmentType === 'video' ? 'Lien Meet' : '';
+                const lienVisio = appointmentType === 'video' ? 'https://meet.google.com/uva-tphn-spf' : '';
                 const lieu = appointmentType === 'presential' ? 'Bureau Handepassement' : '';
 
                 await createRdv({
