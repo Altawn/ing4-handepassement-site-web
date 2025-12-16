@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import HeaderClient from '../components/HeaderClient';
 import FooterMain from '../components/FooterMain';
 import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, MapPin, Video, CheckCircle, XCircle } from 'lucide-react';
-import { createRdv, getAppointmentsForStudent, IncomingRdv, cancelRdv } from '../services/airtable';
+import { createRdv, getAppointmentsForStudent, IncomingRdv, cancelRdv, generateAvailableSlots } from '../services/airtable';
 import { sendRdvConfirmationEmail } from '../services/email';
 
 const PriseRDVClient: React.FC = () => {
@@ -25,6 +25,8 @@ const PriseRDVClient: React.FC = () => {
     const [appointmentToCancel, setAppointmentToCancel] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+    const [slotsLoading, setSlotsLoading] = useState(false);
 
     // Data State
     const [upcomingAppointments, setUpcomingAppointments] = useState<IncomingRdv[]>([]);
@@ -49,12 +51,20 @@ const PriseRDVClient: React.FC = () => {
         setUpcomingAppointments(futureApps);
     };
 
-    const timeSlots = [
-        "09:00", "09:30", "10:00", "10:30",
-        "11:00", "11:30", "14:00", "14:30",
-        "15:00", "15:30", "16:00", "16:30",
-        "17:00"
-    ];
+
+    useEffect(() => {
+        const loadSlots = async () => {
+            if (selectedDate && !isPastDate(selectedDate)) {
+                setSlotsLoading(true);
+                const slots = await generateAvailableSlots(selectedDate);
+                setAvailableSlots(slots);
+                setSlotsLoading(false);
+            } else {
+                setAvailableSlots([]);
+            }
+        };
+        loadSlots();
+    }, [selectedDate]);
 
     // Calendar Helpers (Same as FirstRdvStep2)
     const getDaysInMonth = (date: Date) => {
@@ -281,19 +291,24 @@ const PriseRDVClient: React.FC = () => {
                                 </p>
 
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                    {timeSlots.map((time) => (
-                                        <button
-                                            key={time}
-                                            onClick={() => setSelectedTime(time)}
-                                            className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border transition-all ${selectedTime === time
-                                                ? 'bg-brand text-white border-brand'
-                                                : 'bg-white text-gray-700 border-gray-200 hover:border-brand hover:text-brand'
-                                                }`}
-                                        >
-                                            <Clock size={16} />
-                                            <span className="font-semibold">{time}</span>
-                                        </button>
-                                    ))}
+                                    {slotsLoading ? (
+                                        <div className="col-span-full text-center py-4 text-gray-500">Chargement des créneaux...</div>
+                                    ) : availableSlots.length === 0 ? (
+                                        <div className="col-span-full text-center py-4 text-gray-500">Aucun créneau disponible ce jour-là.</div>
+                                    ) : (
+                                        availableSlots.map((time) => (
+                                            <button
+                                                key={time}
+                                                onClick={() => setSelectedTime(time)}
+                                                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border transition-all ${selectedTime === time
+                                                    ? 'bg-brand text-white border-brand'
+                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-brand hover:text-brand'
+                                                    }`}
+                                            >
+                                                <Clock size={16} />
+                                                <span className="font-semibold">{time}</span>
+                                            </button>
+                                        )))}
                                 </div>
                             </div>
                         )}

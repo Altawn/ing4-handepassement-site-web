@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllAppointments, IncomingRdv, updateRdv } from '../services/airtable';
+import { getAllAppointments, IncomingRdv, updateRdv, createAvailability } from '../services/airtable';
 import { sendRdvUpdateEmail } from '../services/email';
 import { Calendar as CalendarIcon, Clock, Plus, Edit, X, CheckCircle } from 'lucide-react';
 import HeaderAdmin from '../components/HeaderAdmin';
@@ -21,6 +21,7 @@ const RDVAdmin: React.FC = () => {
     const [isNewAppointmentModalOpen, setIsNewAppointmentModalOpen] = useState(false);
     const [isEditAppointmentModalOpen, setIsEditAppointmentModalOpen] = useState(false);
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+    const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [filterDate, setFilterDate] = useState<Date | null>(null);
     const [appointmentToEdit, setAppointmentToEdit] = useState<IncomingRdv | null>(null);
@@ -90,6 +91,12 @@ const RDVAdmin: React.FC = () => {
         time: ''
     });
 
+    const [availabilityForm, setAvailabilityForm] = useState({
+        date: new Date().toISOString().split('T')[0],
+        startTime: '09:00',
+        endTime: '17:00'
+    });
+
     // Mock handlers to satisfy lints
     const handleCreateAppointment = () => { console.log('Create not implemented'); setIsNewAppointmentModalOpen(false); };
 
@@ -140,6 +147,21 @@ const RDVAdmin: React.FC = () => {
         } catch (error) {
             console.error("Failed to update appointment", error);
             alert("Erreur lors de la mise à jour du rendez-vous.");
+        }
+    };
+
+    const handleCreateAvailability = async () => {
+        try {
+            await createAvailability({
+                date: availabilityForm.date,
+                startTime: availabilityForm.startTime,
+                endTime: availabilityForm.endTime
+            });
+            setIsAvailabilityModalOpen(false);
+            alert("Disponibilité ajoutée avec succès !");
+        } catch (error) {
+            console.error("Failed to create availability", error);
+            alert("Erreur lors de l'ajout de la disponibilité.");
         }
     };
 
@@ -248,6 +270,16 @@ const RDVAdmin: React.FC = () => {
 
                 <div className="grid grid-cols-7 gap-1">
                     {days}
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                    <button
+                        onClick={() => setIsAvailabilityModalOpen(true)}
+                        className="w-full py-2 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Ajouter mes disponibilités
+                    </button>
                 </div>
             </div>
         );
@@ -643,6 +675,81 @@ const RDVAdmin: React.FC = () => {
                         <p className="text-sm text-gray-500 mt-4">
                             Vous allez recevoir un email de confirmation avec tous les détails.
                         </p>
+                    </div>
+                </div>
+            )}
+
+            {/* availability Form Modal */}
+            {isAvailabilityModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+                        <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between rounded-t-2xl">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900">Ajouter disponibilités</h2>
+                                <p className="text-sm text-gray-500 mt-1">Définir une plage horaire disponible</p>
+                            </div>
+                            <button
+                                onClick={() => setIsAvailabilityModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="p-8">
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={availabilityForm.date}
+                                        onChange={(e) => setAvailabilityForm({ ...availabilityForm, date: e.target.value })}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            Heure Début
+                                        </label>
+                                        <input
+                                            type="time"
+                                            value={availabilityForm.startTime}
+                                            onChange={(e) => setAvailabilityForm({ ...availabilityForm, startTime: e.target.value })}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            Heure Fin
+                                        </label>
+                                        <input
+                                            type="time"
+                                            value={availabilityForm.endTime}
+                                            onChange={(e) => setAvailabilityForm({ ...availabilityForm, endTime: e.target.value })}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={() => setIsAvailabilityModalOpen(false)}
+                                    className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    onClick={handleCreateAvailability}
+                                    className="flex-1 py-3 bg-brand hover:bg-brand-400 text-white font-semibold rounded-lg transition-colors"
+                                >
+                                    Valider
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

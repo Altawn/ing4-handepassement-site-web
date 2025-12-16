@@ -17,6 +17,7 @@ export const TABLES = {
     TODO_LIST: 'To Do List',
     ADMINISTRATEUR: 'Administrateur',
     DOCUMENTATION: 'documentation',
+    DISPONIBILITES: 'Disponibilites',
 };
 
 // Interface for Appointment Data
@@ -1046,6 +1047,135 @@ export const checkStudentStatus = async (email: string) => {
         return true;
     } catch (error) {
         throw error;
+    }
+};
+
+
+// ---------------------------------------------------------
+// AVAILABILITY & SLOTS MANAGEMENT
+// ---------------------------------------------------------
+
+export interface AvailabilityData {
+    id?: string;
+    date: string; // YYYY-MM-DD
+    startTime: string; // HH:MM
+    endTime: string; // HH:MM
+    adminId?: string;
+}
+
+export const createAvailability = async (data: AvailabilityData) => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        await base(TABLES.DISPONIBILITES).create([{
+            fields: {
+                "Date": data.date,
+                "Heure Debut": data.startTime,
+                "Heure Fin": data.endTime,
+                // "Administrateur": [data.adminId] // Uncomment when Admin ID is available/managed
+            }
+        }], { typecast: true });
+    } catch (error) {
+        console.error("Error creating availability:", error);
+        throw error;
+    }
+};
+
+export const getAvailabilities = async (date: Date): Promise<AvailabilityData[]> => {
+    if (!apiKey || !baseId) throw new Error("Airtable config missing");
+
+    try {
+        // Format date to string YYYY-MM-DD to match Airtable Date field
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        const records = await base(TABLES.DISPONIBILITES).select({
+            filterByFormula: `IS_SAME({Date}, '${dateStr}')`
+        }).all();
+
+        return records.map(record => ({
+            id: record.id,
+            date: record.get('Date') as string,
+            startTime: record.get('Heure Debut') as string,
+            endTime: record.get('Heure Fin') as string
+        }));
+    } catch (error) {
+        console.error("Error fetching availabilities:", error);
+        return [];
+    }
+};
+
+/**
+ * GENERATE AVAILABLE SLOTS
+ * Core logic: 
+ * 1. Get Admin Windows for Date
+ * 2. Get Existing Confirmed RDVs for Date
+ * 3. Generate 30min slots inside Windows
+ * 4. Remove slots that overlap with Existing RDVs
+ */
+export const generateAvailableSlots = async (date: Date): Promise<string[]> => {
+    try {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        // 1. Fetch Availabilities
+        const availabilities = await getAvailabilities(date);
+
+        // 2. Fetch Existing RDVs for that day (Active only)
+        const rdvRecords = await base(TABLES.RDV).select({
+            filterByFormula: `AND(
+                IS_SAME({Date}, '${dateStr}', 'day'),
+                {Statut du RDV} != 'Annulé',
+                {Statut du RDV} != 'Reporté'
+            )`
+        }).all();
+
+        const bookedTimes = new Set<string>();
+        rdvRecords.forEach(record => {
+            const rdvDateStr = record.get('Date') as string;
+            const rdvDate = new Date(rdvDateStr);
+            const hours = rdvDate.getUTCHours().toString().padStart(2, '0');
+            const minutes = rdvDate.getUTCMinutes().toString().padStart(2, '0');
+            bookedTimes.add(`${hours}:${minutes}`);
+        });
+
+        // 3. Generate Slots
+        const possibleSlots = new Set<string>();
+
+        availabilities.forEach(window => {
+            let [startH, startM] = window.startTime.split(':').map(Number);
+            const [endH, endM] = window.endTime.split(':').map(Number);
+
+            // Minutes from midnight
+            let current = startH * 60 + startM;
+            const end = endH * 60 + endM;
+
+            while (current < end) {
+                // Convert back to HH:MM
+                const h = Math.floor(current / 60);
+                const m = current % 60;
+                const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+
+                possibleSlots.add(timeStr);
+
+                current += 30; // 30 min step
+            }
+        });
+
+        // 4. Filter
+        const finalSlots = Array.from(possibleSlots)
+            .filter(slot => !bookedTimes.has(slot))
+            .sort();
+
+        return finalSlots;
+
+    } catch (error) {
+        console.error("Error generating slots:", error);
+        return [];
     }
 };
 

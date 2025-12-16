@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckCircle, X, MapPin, Video, MessageSquare } from 'lucide-react'; import HeaderMain from '../components/HeaderMain';
 import FooterOther from '../components/FooterOther';
-import { createRdv } from '../services/airtable';
+import { createRdv, generateAvailableSlots } from '../services/airtable';
 import { sendRdvConfirmationEmail } from '../services/email';
 
 function FirstRdvStep2() {
@@ -21,14 +21,22 @@ function FirstRdvStep2() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+    const [slotsLoading, setSlotsLoading] = useState(false);
 
-    // Available time slots
-    const timeSlots = [
-        '09:00', '09:30', '10:00', '10:30',
-        '11:00', '11:30', '14:00', '14:30',
-        '15:00', '15:30', '16:00', '16:30',
-        '17:00'
-    ];
+    useEffect(() => {
+        const loadSlots = async () => {
+            if (selectedDate && !isPastDate(selectedDate)) {
+                setSlotsLoading(true);
+                const slots = await generateAvailableSlots(selectedDate);
+                setAvailableSlots(slots);
+                setSlotsLoading(false);
+            } else {
+                setAvailableSlots([]);
+            }
+        };
+        loadSlots();
+    }, [selectedDate]);
 
     // Calendar helpers
     const getDaysInMonth = (date: Date) => {
@@ -294,19 +302,24 @@ function FirstRdvStep2() {
                                         </p>
 
                                         <div className="grid grid-cols-4 gap-3">
-                                            {timeSlots.map((time) => (
-                                                <button
-                                                    key={time}
-                                                    onClick={() => setSelectedTime(time)}
-                                                    className={`px-4 py-3 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 ${selectedTime === time
-                                                        ? 'bg-brand text-white border-brand'
-                                                        : 'bg-white border-gray-300 text-gray-700 hover:border-brand hover:text-brand'
-                                                        }`}
-                                                >
-                                                    <Clock className="w-4 h-4" />
-                                                    {time}
-                                                </button>
-                                            ))}
+                                            {slotsLoading ? (
+                                                <div className="col-span-full text-center py-2 text-gray-500">Chargement...</div>
+                                            ) : availableSlots.length === 0 ? (
+                                                <div className="col-span-full text-center py-2 text-gray-500 text-sm">Aucun créneau</div>
+                                            ) : (
+                                                availableSlots.map((time) => (
+                                                    <button
+                                                        key={time}
+                                                        onClick={() => setSelectedTime(time)}
+                                                        className={`px-4 py-3 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 ${selectedTime === time
+                                                            ? 'bg-brand text-white border-brand'
+                                                            : 'bg-white border-gray-300 text-gray-700 hover:border-brand hover:text-brand'
+                                                            }`}
+                                                    >
+                                                        <Clock className="w-4 h-4" />
+                                                        {time}
+                                                    </button>
+                                                )))}
                                         </div>
                                     </div>
                                 )}
