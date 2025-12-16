@@ -61,7 +61,7 @@ function EspaceEtudiant() {
 
 
 
-    const upcomingAppointments = rdvs.filter(r => !r.isPast).sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
+    const upcomingAppointments = rdvs.filter(r => !r.isPast && (r.status === 'Attente de Validation' || r.status === 'Prévu')).sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
     const pastAppointments = rdvs.filter(r => r.isPast).sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
 
     return (
@@ -175,7 +175,9 @@ function EspaceEtudiant() {
                             <h2 className="text-2xl font-bold text-slate-800">
                                 Rendez-vous à venir
                             </h2>
-                            <button className="text-blue-600 hover:text-blue-700 font-semibold text-sm">
+                            <button
+                                onClick={() => navigate('/prise-rdv')}
+                                className="text-blue-600 hover:text-blue-700 font-semibold text-sm">
                                 Voir tout
                             </button>
                         </div>

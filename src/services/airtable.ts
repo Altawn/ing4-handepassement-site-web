@@ -880,7 +880,8 @@ export const getStudentRdvs = async (studentId: string): Promise<StudentRdv[]> =
                 month: 'short',
                 year: 'numeric',
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                timeZone: 'UTC'
             };
             const formattedDate = rdvDate.toLocaleDateString('fr-FR', options);
 
