@@ -1052,31 +1052,27 @@ export const deleteDocumentation = async (id: string) => {
 export const checkStudentStatus = async (email: string) => {
     if (!apiKey || !baseId) throw new Error("Airtable config missing");
 
-    try {
-        const records = await base(TABLES.ETUDIANT).select({
-            filterByFormula: `{Adresse mail} = '${email}'`,
-            maxRecords: 1
-        }).firstPage();
+    const records = await base(TABLES.ETUDIANT).select({
+        filterByFormula: `{Adresse mail} = '${email}'`,
+        maxRecords: 1
+    }).firstPage();
 
-        if (records.length === 0) {
-            throw new Error("EMAIL_NOT_FOUND");
-        }
-
-        const rec = records[0];
-        const currentStatus = rec.get('Statut') as string;
-
-        // Strict Check: Only 'validation' status allowed for registration
-        if (currentStatus !== 'validation') {
-            if (currentStatus === 'Étudiant') {
-                throw new Error("ACCOUNT_EXISTS");
-            }
-            throw new Error("STATUS_NOT_VALIDATION");
-        }
-
-        return true;
-    } catch (error) {
-        throw error;
+    if (records.length === 0) {
+        throw new Error("EMAIL_NOT_FOUND");
     }
+
+    const rec = records[0];
+    const currentStatus = rec.get('Statut') as string;
+
+    // Strict Check: Only 'validation' status allowed for registration
+    if (currentStatus !== 'validation') {
+        if (currentStatus === 'Étudiant') {
+            throw new Error("ACCOUNT_EXISTS");
+        }
+        throw new Error("STATUS_NOT_VALIDATION");
+    }
+
+    return true;
 };
 
 
@@ -1180,7 +1176,7 @@ export const generateAvailableSlots = async (date: Date): Promise<string[]> => {
         const possibleSlots = new Set<string>();
 
         availabilities.forEach(window => {
-            let [startH, startM] = window.startTime.split(':').map(Number);
+            const [startH, startM] = window.startTime.split(':').map(Number);
             const [endH, endM] = window.endTime.split(':').map(Number);
 
             // Minutes from midnight

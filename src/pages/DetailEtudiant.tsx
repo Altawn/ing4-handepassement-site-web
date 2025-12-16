@@ -170,7 +170,7 @@ const DetailEtudiant: React.FC = () => {
                                     <div className="flex items-center justify-between mb-6">
                                         <div>
                                             <h2 className="text-xl font-bold text-brand mb-1">Informations personnelles</h2>
-                                            <p className="text-sm text-gray-500">Détails et coordonnées de l'étudiant</p>
+                                            <p className="text-sm text-gray-500">Détails et coordonnées de l&apos;étudiant</p>
                                         </div>
                                         <button
                                             onClick={() => setIsEditModalOpen(true)}
@@ -217,7 +217,7 @@ const DetailEtudiant: React.FC = () => {
                                             </p>
                                         </div>
                                         <div>
-                                            <label className="text-sm font-semibold text-gray-600">Date d'inscription</label>
+                                            <label className="text-sm font-semibold text-gray-600">Date d&apos;inscription</label>
                                             <p className="text-base text-gray-900 mt-1">{studentInfo.inscriptionDate}</p>
                                         </div>
                                     </div>
@@ -456,7 +456,7 @@ const DetailEtudiant: React.FC = () => {
                         </div>
 
                         <div className="p-8">
-                            <p className="text-sm text-gray-500 mb-6">Détails et coordonnées de l'étudiant</p>
+                            <p className="text-sm text-gray-500 mb-6">Détails et coordonnées de l&apos;étudiant</p>
 
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div>
@@ -549,7 +549,7 @@ const DetailEtudiant: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Date d'inscription
+                                        Date d&apos;inscription
                                     </label>
                                     <input
                                         type="text"
@@ -594,7 +594,7 @@ const DetailEtudiant: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Date d'échéance
+                                        Date d&apos;échéance
                                     </label>
                                     <input
                                         type="date"

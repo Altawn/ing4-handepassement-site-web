@@ -14,6 +14,7 @@ import { Trash2, Plus, ExternalLink, Check, Search, X } from 'lucide-react';
 
 function DocumentationAdmin() {
     const [docs, setDocs] = useState<DocumentationData[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [students, setStudents] = useState<any[]>([]); // Using any for student structure based on service
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,7 +55,7 @@ function DocumentationAdmin() {
             try {
                 await deleteDocumentation(id);
                 setDocs(docs.filter(d => d.id !== id));
-            } catch (error) {
+            } catch {
                 alert("Erreur lors de la suppression");
             }
         }
@@ -84,8 +85,10 @@ function DocumentationAdmin() {
                 shareMode: 'all'
             });
             fetchData(); // Refresh list
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("Create detailed error:", error);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const msg = error?.error || error?.message || JSON.stringify(error);
             alert("Erreur lors de la création: " + msg);
         }

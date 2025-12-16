@@ -30,29 +30,6 @@ const Oeil = () => {
         };
     });
 
-    const applySettings = () => {
-        const htmlRoot = document.documentElement;
-        const appRoot = document.getElementById('root');
-
-        if (!appRoot) return;
-
-        // Apply font size and spacing to HTML root for global impact (rem usage)
-        htmlRoot.style.setProperty('--base-font-size', `${settings.fontSize}px`);
-        htmlRoot.style.setProperty('--letter-spacing', `${settings.letterSpacing}px`);
-
-        // Apply filters/contrast ONLY to the app root to avoid breaking fixed positioning of the portal
-        if (settings.colorBlindMode !== 'normal') {
-            appRoot.classList.add(`colorblind-${settings.colorBlindMode}`);
-        } else {
-            appRoot.classList.remove('colorblind-protan', 'colorblind-deutan', 'colorblind-tritan');
-        }
-
-        if (settings.contrast === 'high') {
-            appRoot.classList.add('high-contrast');
-        } else {
-            appRoot.classList.remove('high-contrast');
-        }
-    };
 
     const resetSettings = () => {
         setSettings({
@@ -104,6 +81,30 @@ const Oeil = () => {
 
     // Apply settings whenever they change
     useEffect(() => {
+        const applySettings = () => {
+            const htmlRoot = document.documentElement;
+            const appRoot = document.getElementById('root');
+
+            if (!appRoot) return;
+
+            // Apply font size and spacing to HTML root for global impact (rem usage)
+            htmlRoot.style.setProperty('--base-font-size', `${settings.fontSize}px`);
+            htmlRoot.style.setProperty('--letter-spacing', `${settings.letterSpacing}px`);
+
+            // Apply filters/contrast ONLY to the app root to avoid breaking fixed positioning of the portal
+            if (settings.colorBlindMode !== 'normal') {
+                appRoot.classList.add(`colorblind-${settings.colorBlindMode}`);
+            } else {
+                appRoot.classList.remove('colorblind-protan', 'colorblind-deutan', 'colorblind-tritan');
+            }
+
+            if (settings.contrast === 'high') {
+                appRoot.classList.add('high-contrast');
+            } else {
+                appRoot.classList.remove('high-contrast');
+            }
+        };
+
         applySettings();
     }, [settings]);
 
@@ -199,7 +200,7 @@ const Oeil = () => {
                                         <h3 className="font-bold text-gray-900">Espacement des lettres</h3>
                                     </div>
                                     <p className="text-sm text-gray-600 mb-3">
-                                        Augmentez l'espace entre les lettres
+                                        Augmentez l&apos;espace entre les lettres
                                     </p>
                                     <div className="flex items-center gap-4">
                                         <button

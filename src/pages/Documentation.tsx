@@ -49,7 +49,7 @@ function Documentation() {
                         <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
                             <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                             <h3 className="text-xl font-bold text-gray-900">Aucune documentation disponible</h3>
-                            <p className="text-gray-500 mt-2">Vous n'avez accès à aucun document pour le moment.</p>
+                            <p className="text-gray-500 mt-2">Vous n&apos;avez accès à aucun document pour le moment.</p>
                         </div>
                     ) : (
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

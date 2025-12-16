@@ -9,29 +9,28 @@ import CalendarWidget from '../components/CalendarWidget';
 
 function EspaceEtudiant() {
     const navigate = useNavigate();
-    const [user, setUser] = useState<any>(null);
+
+    const [user] = useState<any>(() => {
+        const stored = localStorage.getItem('user');
+        return stored ? JSON.parse(stored) : null;
+    });
     const [tasks, setTasks] = useState<Task[]>([]);
     const [rdvs, setRdvs] = useState<StudentRdv[]>([]);
     const [loadingTasks, setLoadingTasks] = useState(true);
 
 
     useEffect(() => {
-        // Load user from local storage
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            const parsedUser = JSON.parse(storedUser);
-            setUser(parsedUser);
-
+        if (user) {
             // Load tasks for this student
-            if (parsedUser.id) {
+            if (user.id) {
                 // Fetch Tasks
-                getTasksForStudent(parsedUser.id).then(fetchedTasks => {
+                getTasksForStudent(user.id).then(fetchedTasks => {
                     setTasks(fetchedTasks);
                     setLoadingTasks(false);
                 });
 
                 // Fetch RDVs
-                getStudentRdvs(parsedUser.id).then(fetchedRdvs => {
+                getStudentRdvs(user.id).then(fetchedRdvs => {
                     setRdvs(fetchedRdvs);
                 });
             }

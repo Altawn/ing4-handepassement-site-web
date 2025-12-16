@@ -5,6 +5,12 @@ interface CalendarWidgetProps {
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 
+interface CalendarItem {
+    day: number | null;
+    date?: Date;
+    key: string;
+}
+
 export default function CalendarWidget({ highlightDates = [] }: CalendarWidgetProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -15,7 +21,7 @@ export default function CalendarWidget({ highlightDates = [] }: CalendarWidgetPr
     };
 
     const getDaysToDisplay = () => {
-        const days = [];
+        const days: CalendarItem[] = [];
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
 
@@ -113,8 +119,8 @@ export default function CalendarWidget({ highlightDates = [] }: CalendarWidgetPr
             </div>
 
             <div className="grid grid-cols-7 gap-2 text-center text-sm">
-                {displayDays.map((item: any) => {
-                    if (!item.day) return <div key={item.key}></div>; // padding
+                {displayDays.map((item: CalendarItem) => {
+                    if (!item.day || !item.date) return <div key={item.key}></div>; // padding
 
                     const isCurrent = isToday(item.date);
                     const isHighlighted = hasEvent(item.date);
@@ -123,7 +129,7 @@ export default function CalendarWidget({ highlightDates = [] }: CalendarWidgetPr
                         <div
                             key={item.key}
                             onClick={() => {
-                                setCurrentDate(item.date);
+                                setCurrentDate(item.date!);
                             }}
                             className={`h-10 w-10 mx-auto flex flex-col items-center justify-center rounded-full cursor-pointer transition relative ${isSelected(item.date)
                                 ? 'bg-blue-600 text-white font-bold shadow-md'

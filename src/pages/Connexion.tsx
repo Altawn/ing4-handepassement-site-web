@@ -26,6 +26,7 @@ function Connexion() {
                 localStorage.setItem('user', JSON.stringify(result.student));
 
                 // Check status for redirection
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const studentData = result.student as any;
                 const status = studentData['Statut'];
                 if (status === 'Admin' || status === 'Administrateur') {
@@ -36,7 +37,7 @@ function Connexion() {
             } else {
                 setError(result.message || "Erreur lors de la connexion");
             }
-        } catch (err) {
+        } catch {
             setError("Une erreur est survenue. Veuillez réessayer.");
         } finally {
             setIsLoading(false);
@@ -115,7 +116,7 @@ function Connexion() {
                         <p className="text-gray-600 text-sm">
                             Pas encore de compte ?{' '}
                             <Link to="/inscription" className="text-brand hover:text-brand-600 font-semibold">
-                                S'inscrire
+                                S&apos;inscrire
                             </Link>
                         </p>
                     </div>
