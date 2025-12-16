@@ -6,16 +6,6 @@ import HeaderAdmin from '../components/HeaderAdmin';
 import FooterMain from '../components/FooterMain';
 import Oeil from '../components/Oeil';
 
-interface Appointment {
-    id: number;
-    studentName: string;
-    type: string;
-    date: string;
-    time: string;
-    status: 'confirmé' | 'en attente';
-    counselor: string;
-}
-
 const RDVAdmin: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
     const [isNewAppointmentModalOpen, setIsNewAppointmentModalOpen] = useState(false);
@@ -28,7 +18,6 @@ const RDVAdmin: React.FC = () => {
 
 
     const [appointments, setAppointments] = useState<IncomingRdv[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchAppointments = async () => {
@@ -37,8 +26,6 @@ const RDVAdmin: React.FC = () => {
                 setAppointments(data);
             } catch (error) {
                 console.error("Failed to fetch appointments", error);
-            } finally {
-                setIsLoading(false);
             }
         };
 
@@ -86,7 +73,7 @@ const RDVAdmin: React.FC = () => {
         status: ''
     });
 
-    const [confirmedAppointment, setConfirmedAppointment] = useState({
+    const [confirmedAppointment] = useState({
         date: '',
         time: ''
     });

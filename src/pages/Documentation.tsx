@@ -5,7 +5,7 @@ import HeaderClient from '../components/HeaderClient';
 import FooterMain from '../components/FooterMain';
 import Oeil from '../components/Oeil';
 import { getDocumentation, DocumentationData } from '../services/airtable';
-import { FileText, ExternalLink, X, Calendar } from 'lucide-react';
+import { FileText, ExternalLink, X } from 'lucide-react';
 
 function Documentation() {
     const navigate = useNavigate();

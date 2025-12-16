@@ -129,7 +129,12 @@ const Oeil = () => {
                     />
 
                     {/* Panel */}
-                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl z-[9999] w-full max-w-md max-h-[90vh] overflow-y-auto">
+                    <div
+                        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl z-[9999] w-full max-w-md max-h-[90vh] overflow-y-auto"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="accessibility-title"
+                    >
                         <div className="p-6">
                             {/* Header */}
                             <div className="flex items-center justify-between mb-6">
@@ -137,13 +142,14 @@ const Oeil = () => {
                                     <div className="w-10 h-10 bg-brand/10 rounded-full flex items-center justify-center">
                                         <Eye className="w-5 h-5 text-brand" />
                                     </div>
-                                    <h2 className="text-xl font-bold text-gray-900">
+                                    <h2 id="accessibility-title" className="text-xl font-bold text-gray-900">
                                         Paramètres d'accessibilité
                                     </h2>
                                 </div>
                                 <button
                                     onClick={() => setIsOpen(false)}
                                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    aria-label="Fermer les paramètres"
                                 >
                                     <X className="w-5 h-5 text-gray-500" />
                                 </button>
@@ -163,16 +169,18 @@ const Oeil = () => {
                                         <button
                                             onClick={() => handleFontSizeChange(Math.max(12, settings.fontSize - 2))}
                                             className="px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200 font-bold"
+                                            aria-label="Diminuer la taille du texte"
                                         >
                                             -
                                         </button>
                                         <div className="flex-1 text-center">
-                                            <span className="text-2xl font-bold text-brand">{settings.fontSize}px</span>
+                                            <span className="text-2xl font-bold text-brand" aria-live="polite">{settings.fontSize}px</span>
                                             <p className="text-xs text-gray-500">augmentez ou diminuez</p>
                                         </div>
                                         <button
                                             onClick={() => handleFontSizeChange(Math.min(24, settings.fontSize + 2))}
                                             className="px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200 font-bold"
+                                            aria-label="Augmenter la taille du texte"
                                         >
                                             +
                                         </button>
@@ -197,16 +205,18 @@ const Oeil = () => {
                                         <button
                                             onClick={() => handleLetterSpacingChange(Math.max(0, settings.letterSpacing - 0.5))}
                                             className="px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200 font-bold"
+                                            aria-label="Diminuer l'espacement des lettres"
                                         >
                                             -
                                         </button>
                                         <div className="flex-1 text-center">
-                                            <span className="text-2xl font-bold text-brand">{settings.letterSpacing.toFixed(1)}px</span>
+                                            <span className="text-2xl font-bold text-brand" aria-live="polite">{settings.letterSpacing.toFixed(1)}px</span>
                                             <p className="text-xs text-gray-500">augmentez ou diminuez</p>
                                         </div>
                                         <button
                                             onClick={() => handleLetterSpacingChange(Math.min(5, settings.letterSpacing + 0.5))}
                                             className="px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200 font-bold"
+                                            aria-label="Augmenter l'espacement des lettres"
                                         >
                                             +
                                         </button>

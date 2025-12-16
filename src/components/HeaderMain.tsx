@@ -24,7 +24,7 @@ const HeaderMain: React.FC = () => {
             <div className="container mx-auto flex flex-col lg:flex-row items-center justify-between py-3 lg:py-2 gap-4 lg:gap-0">
                 <div className="w-full lg:w-auto flex items-center justify-between">
                     {/* Logo Section */}
-                    <Link to="/" className="flex items-center gap-3 lg:gap-4 group">
+                    <Link to="/" className="flex items-center gap-3 lg:gap-4 group" aria-label="Accueil - Handepassement">
                         <img
                             src={logo}
                             alt="Handepassement Logo"
@@ -39,13 +39,18 @@ const HeaderMain: React.FC = () => {
                     <button
                         className="lg:hidden text-yellow-500 hover:text-accent transition-colors"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+                        aria-expanded={isMenuOpen}
                     >
                         {isMenuOpen ? <X size={32} /> : <Menu size={32} />}
                     </button>
                 </div>
 
                 {/* Navigation Section */}
-                <nav className={`${isMenuOpen ? 'flex' : 'hidden'} absolute top-full right-0 mt-4 w-64 bg-white rounded-2xl shadow-xl p-6 flex-col gap-4 lg:static lg:flex lg:flex-row lg:items-center lg:justify-end lg:gap-6 xl:gap-16 lg:w-auto lg:bg-transparent lg:shadow-none lg:p-0 lg:mt-0`}>
+                <nav
+                    className={`${isMenuOpen ? 'flex' : 'hidden'} absolute top-full right-0 mt-4 w-64 bg-white rounded-2xl shadow-xl p-6 flex-col gap-4 lg:static lg:flex lg:flex-row lg:items-center lg:justify-end lg:gap-6 xl:gap-16 lg:w-auto lg:bg-transparent lg:shadow-none lg:p-0 lg:mt-0`}
+                    aria-label="Navigation principale"
+                >
 
                     <a href="/#concerns-section" onClick={handleConcernsClick} className="text-brand hover:text-accent transition-colors font-medium text-lg lg:text-white lg:text-base xl:text-xl cursor-pointer">
                         Êtes-vous concerné ?
