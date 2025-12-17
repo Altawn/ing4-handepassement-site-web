@@ -4,116 +4,125 @@ Bienvenue sur le dépôt du projet **Handepassement**.
 
 ## 📝 Description
 
-**Handepassement** est une plateforme web dédiée à l'accompagnement des étudiants en situation de handicap dans l'enseignement supérieur. Notre mission est de faciliter leur insertion et leur réussite académique à travers :
+**Handepassement** est une plateforme web dédiée à l'accompagnement des étudiants en situation de handicap dans l'enseignement supérieur. Elle vise à faciliter leur insertion et leur réussite académique grâce à des outils numériques adaptés.
 
--   📅 **Prise de rendez-vous** pour un suivi personnalisé.
--   🤝 **Accompagnement sur mesure** adapté aux besoins spécifiques (Dyslexie, TDAH, Autisme, etc.).
--   📚 **Documentation** et ressources sur les aménagements disponibles.
--   🛠️ **Outils de compensation** numériques pour aider au quotidien.
+### Fonctionnalités principales :
+-   📅 **Prise de rendez-vous** : Module de réservation de créneaux avec gestion des disponibilités.
+-   🤝 **Espace Étudiant** : Suivi personnalisé, accès aux documents et informations.
+-   🛠️ **Espace Administrateur** : Gestion des étudiants, validation des inscriptions, planning des rendez-vous.
+-   📚 **Documentation** : Ressources sur les aménagements et aides disponibles.
+-   🔔 **Notifications** : Emails automatiques pour les confirmations et rappels de rendez-vous.
 
-L'objectif est de garantir des études supérieures sans obstacles : *"On Handiscute ?"*
+---
 
-## 🚀 Technologies utilisées
+## 🚀 Technologies
 
-Ce projet est construit avec des technologies web modernes pour assurer performance et accessibilité :
-
--   **Framework** : [React](https://react.dev/) (via [Vite](https://vitejs.dev/))
+Ce projet utilise une stack moderne pour garantir performance et maintenabilité :
+-   **Frontend** : [React](https://react.dev/) + [Vite](https://vitejs.dev/)
 -   **Langage** : [TypeScript](https://www.typescriptlang.org/)
--   **Styles** : [Tailwind CSS](https://tailwindcss.com/)
+-   **Styling** : [Tailwind CSS](https://tailwindcss.com/)
 -   **Routing** : [React Router](https://reactrouter.com/)
--   **Base de données / Backend** : [Airtable](https://airtable.com/)
+-   **Backend / Base de données** : [Airtable](https://airtable.com/)
+-   **Emails** : [EmailJS](https://www.emailjs.com/)
 -   **Icônes** : [Lucide React](https://lucide.dev/)
 
-## 🛠️ Installation et Démarrage
+---
 
-Pour lancer le projet localement sur votre machine :
+## 🛠️ Installation et Configuration
 
-1.  **Cloner le dépôt** :
+Suivez ces étapes pour installer et lancer le projet localement.
+
+### 1. Prérequis
+-   **Node.js** (version 18 ou supérieure recommandée)
+-   **npm** (ou yarn)
+
+### 2. Cloner le projet
+```bash
+git clone https://gitlab.com/Altawn/handepassement-site-web.git
+cd handepassement-site-web
+```
+
+### 3. Installer les dépendances
+```bash
+npm install
+# ou si vous utilisez yarn : yarn install
+```
+
+### 4. Configuration des variables d'environnement
+Le projet nécessite certaines clés API pour fonctionner (Airtable, EmailJS).
+Créez un fichier `.env` à la racine du projet en dupliquant le fichier d'exemple :
+
+```bash
+cp .env.example .env
+```
+
+Puis ouvrez le fichier `.env` et remplissez les valeurs :
+```env
+# Airtable configuration
+VITE_AIRTABLE_API_KEY=votre_cle_api_airtable
+VITE_AIRTABLE_BASE_ID=votre_id_base_airtable
+
+# EmailJS configuration
+VITE_EMAILJS_PUBLIC_KEY=votre_public_key
+VITE_EMAILJS_SERVICE_ID=votre_service_id
+VITE_EMAILJS_TEMPLATE_ID=votre_template_id
+VITE_EMAILJS_UPDATE_TEMPLATE_ID=votre_update_template_id (optionnel)
+```
+> **Note** : Demandez ces clés à l'administrateur du projet si vous ne les avez pas.
+
+---
+
+## ▶️ Démarrage
+
+Pour lancer le serveur de développement local :
+```bash
+npm run dev
+```
+L'application sera accessible sur `http://localhost:5173`.
+
+---
+
+## 📂 Structure du Projet
+
+Voici une vue d'ensemble pour vous aider à naviguer dans le code :
+
+```
+src/
+├── components/      # Composants réutilisables (Boutons, Modales, Widgets...)
+├── pages/           # Pages de l'application (EspaceEtudiant, Admin, Login...)
+├── services/        # Logique métier et appels API
+│   ├── airtable.ts  # Configuration et fonctions liées à Airtable
+│   └── email.ts     # Service d'envoi d'emails via EmailJS
+├── styles/          # Fichiers CSS globaux et index.css
+├── App.tsx          # Composant racine et configuration des routes
+└── main.tsx         # Point d'entrée de l'application
+```
+
+---
+
+## 📦 Build et Déploiement
+
+Le projet est optimisé pour être déployé sur **Vercel** ou tout autre hébergeur statique.
+
+### Créer une version de production
+Pour compiler le projet pour la production :
+```bash
+npm run build
+```
+Les fichiers générés se trouveront dans le dossier `dist`.
+
+### Déploiement Vercel
+Le fichier `vercel.json` est présent à la racine pour configurer le déploiement automatique. Assurez-vous d'ajouter les variables d'environnement dans l'interface de Vercel lors du déploiement.
+
+---
+
+## 🤝 Contribuer
+
+1.  Assurez-vous que le code respecte les règles de linter :
     ```bash
-    git clone https://gitlab.com/Altawn/handepassement-site-web.git
-    cd handepassement-site-web
+    npm run lint
     ```
+2.  Créez une branche pour votre fonctionnalité et faites une Pull Request.
 
-2.  **Installer les dépendances** :
-    ```bash
-    yarn install
-    ```
-
-3.  **Configurer les variables d'environnement** :
-    Créez un fichier `.env` à la racine du projet et ajoutez vos clés API Airtable (voir `.env.example` si disponible ou demandez à l'administrateur).
-    ```env
-    VITE_AIRTABLE_API_KEY=votre_cle_api
-    VITE_AIRTABLE_BASE_ID=votre_id_base
-    ```
-
-4.  **Lancer le serveur de développement** :
-    ```bash
-    yarn run dev
-    ```
-
-5.  **Accéder à l'application** :
-    Ouvrez votre navigateur à l'adresse indiquée (généralement `http://localhost:5173`).
-
-## ✅ To-Do List
-
-Cette section liste les tâches restantes et les améliorations à apporter au projet.
-- [ ] **Inscription**
-    - [x] Rendre les champs obligatoires.
-    - [x] Ajouter champ aidant familial
-    - [x] En mode Tritanopie, la page inscription est floutée 
-    - [x] Modal et oeil bloqué en mode Tritanopie et les autres
-    - [x] Protéger les mdp dans la bdd (admin devrait pas pouvoir les voir je pense)
-    - [x] si letudiant coche oui pour aidant familial, il faut qu'il mette le nom ou mail? ou alors on met juste oui/non
-
-
-- [ ] **Prise de rendez-vous**
-    - [ ] Ajouter selon choix présentiel ou visio un lien visio ou localisation pour rdv (demander a Myriam)
-    - [ ] générer un lien google meet pour visio
-
-
-- [ ] **BDD**
-    - [x] Gérer statut étudiant "en attente" après premier RDV
-    - [x] Verif si l'étudiant est déjà dans la base en tant que "Etudiant" avant d'autoriser l'inscription (pas en attente) 
-    - [x] rajouter champs disponibilités dans table admin (ou creer un table en plus connecté a l'admin)
-
-
-- [ ] **RDV**
-    - [x] connecter prise de rdv depuis page de connexion de l'étudiant
-    - [x] creer le champs de remplissage du résumé du rdv dans admin
-    - [x] connecté ces résumés à l'étudiant en question dans son espace 
-    - [x] enlever le bouton "nouveau rendez-vous" dans l'espace admin (si elle veut un rdv soit on met ca dans la to do list de l'étudiant - en mode prend un rdv avec moi, soit on envoie un mail)
-    - [x] rajouter une page ou un endroit pour que myriam puisse remplir ses dispo - comment on gere ca dans la bdd????
-    - [x] réalisé et validé ??? 
-    - [ ] faire un bouton pour valider ou annuler un rdv coté admin
-
-
-- [ ] **Connexion**
-    - [x] Footer qui est en haut de la page
-    - [x] Régler le fait que si on tape "/admin" dans l'adresse, on est redirigé vers la page admin sans même s'être connecté (Faire une protection sur les pages nécessitant une connexion)
-
-
-- [ ] **Admin**
-    - [x] rajouter bouton pour valider un etudiant - le faire passer de "en attente" à "etudiant"
-    - [x] detail de l'étudiant à lié avec l'étudiant sur lequel on clique, afficher ses infos (avec airtable)
-
-
-- [ ] **Documentation**
-    - [x] creer la table documentation dans airtable
-    - [x] lier l'accès à la documentation à l'admin avec ajout et modification 
-    - [x] afficher la documentation dans l'espace etudiant
-
-
-- [ ] **Automatisation**
-    - [x] Envoi de mail automatique pour la prise de RDV
-
-
-- [ ] **Général**
-    - [x] Quand appui du bouton Handépassement alors qu'on est ceonnecté -> déconnexion (on veut être redirigé vers la page accueil client ou admin quand on clique sur handépassement et qu'on est connecté)
-
-
-- [ ] **Espace étudiant**
-    - [x] enlever ou mettre en place le bouton weekly monthly dans le calendrier - on peut pas non plus changer de mois avec les fleches
-    
-    
-    ---
-*Projet réalisé dans le cadre de l'ING4.*
+---
+*Projet réalisé par Ronan MEYER, Matthias AUBERT, Marina SA NASCIMENTO dans le cadre de l'ING4.*
